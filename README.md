@@ -167,15 +167,19 @@ npx playwright install chromium     # for the browser agent
 npm run dev                          # http://localhost:3500
 ```
 
-### Run as a Windows .exe
+### Download the Windows .exe
+
+Grab the latest portable build from **[Releases](https://github.com/vaibhav4046/mnemosyne/releases/latest)** (~577 MB zip). Unzip, double-click `Own Wiki.exe`, done. Electron boots the Next.js standalone server on `127.0.0.1:3789` and opens a native window.
+
+### Build the .exe yourself
 
 ```bash
 npm install
 npx playwright install chromium
-npm run build:exe                    # produces dist-electron/OwnWiki-1.0.0-portable.exe
+npm run build:exe          # produces dist-electron/win-unpacked/Own Wiki.exe
 ```
 
-Double-click the produced `.exe` — Electron boots the Next.js standalone server in-process and opens a native window. No installation required; the binary is self-contained.
+(Windows Developer Mode required for electron-builder to extract code-signing symlinks — or just ship the `win-unpacked/` folder as-is.)
 
 Open `http://localhost:3500`. The status bar should read **ollama live · llama3.2:3b · nomic-embed-text**.
 

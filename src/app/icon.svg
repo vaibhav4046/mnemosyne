@@ -1,22 +1,54 @@
-<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="Sleek purple, white and black transparent website logo">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#8b5cf6"/>
-      <stop offset="100%" stop-color="#06b6d4"/>
+    <linearGradient id="purpleCore" x1="180" y1="120" x2="860" y2="900" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D9C7FF"/>
+      <stop offset="0.28" stop-color="#A855F7"/>
+      <stop offset="0.62" stop-color="#6D28D9"/>
+      <stop offset="1" stop-color="#2E1065"/>
     </linearGradient>
+    <linearGradient id="whiteSheen" x1="250" y1="170" x2="720" y2="760" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.98"/>
+      <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.08"/>
+    </linearGradient>
+    <linearGradient id="blackEdge" x1="150" y1="160" x2="830" y2="860" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#181025"/>
+      <stop offset="1" stop-color="#030007"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="30" flood-color="#000000" flood-opacity="0.38"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="18" flood-color="#8B5CF6" flood-opacity="0.34"/>
+    </filter>
+    <filter id="innerGlow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
   </defs>
-  <rect x="1" y="1" width="62" height="62" rx="14" fill="url(#bg)"/>
-  <g stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <line x1="16" y1="48" x2="16" y2="20"/>
-    <line x1="16" y1="20" x2="32" y2="36"/>
-    <line x1="32" y1="36" x2="48" y2="20"/>
-    <line x1="48" y1="20" x2="48" y2="48"/>
-  </g>
-  <g fill="white">
-    <circle cx="16" cy="48" r="3"/>
-    <circle cx="16" cy="20" r="3"/>
-    <circle cx="32" cy="36" r="3.5"/>
-    <circle cx="48" cy="20" r="3"/>
-    <circle cx="48" cy="48" r="3"/>
+
+  <!-- Transparent background intentionally left empty -->
+
+  <g filter="url(#softShadow)">
+    <!-- Outer black shield-ring for contrast on both light and dark websites -->
+    <path fill="url(#blackEdge)" fill-rule="evenodd" d="M512 86c239.8 0 426 183.5 426 420.6 0 92.3-28.4 176.9-77 246.8l70.7 70.7c18.3 18.3 18.3 48 0 66.3l-41.4 41.4c-18.3 18.3-48 18.3-66.3 0l-72.5-72.5C683.9 905.2 600.8 932 512 932 272.2 932 86 748.5 86 511.4 86 271.9 272.2 86 512 86Zm0 128c-165.9 0-298 130.9-298 297.4 0 164.1 132.1 292.6 298 292.6 49.6 0 96.2-11.5 136.9-32l-78.5-78.5c-18.3-18.3-18.3-48 0-66.3l41.4-41.4c18.3-18.3 48-18.3 66.3 0l80.6 80.6c32.1-46.1 51.3-99.7 51.3-155C810 344.9 677.9 214 512 214Z"/>
+
+    <!-- Purple monogram body -->
+    <path fill="url(#purpleCore)" fill-rule="evenodd" d="M512 155c201.3 0 357 154.5 357 354.9 0 75.8-22.5 145.7-61.2 203.7l74.2 74.2c12.5 12.5 12.5 32.8 0 45.3l-47 47c-12.5 12.5-32.8 12.5-45.3 0l-76.1-76.1C656.4 843.4 587.2 866 512 866 310.7 866 155 711.5 155 511.1 155 309.5 310.7 155 512 155Zm0 116c-136.5 0-241 103.5-241 240.1 0 133.9 104.5 238.9 241 238.9 41.1 0 79.4-9.8 113-27.3l-73.2-73.2c-12.5-12.5-12.5-32.8 0-45.3l47-47c12.5-12.5 32.8-12.5 45.3 0l75.2 75.2c21.8-36 34.7-77.6 34.7-121.3C754 374.5 648.5 271 512 271Z"/>
+
+    <!-- White inner cut / clean negative core -->
+    <circle cx="512" cy="511" r="142" fill="#FFFFFF" opacity="0.98"/>
+
+    <!-- Purple center accent so the mark stays branded at small sizes -->
+    <circle cx="512" cy="511" r="86" fill="url(#purpleCore)"/>
+
+    <!-- Premium diagonal slash tail -->
+    <path fill="#FFFFFF" d="M619.8 622.3c10.6-10.6 27.9-10.6 38.5 0l190.4 190.4c10.6 10.6 10.6 27.9 0 38.5l-27.5 27.5c-10.6 10.6-27.9 10.6-38.5 0L592.3 688.3c-10.6-10.6-10.6-27.9 0-38.5l27.5-27.5Z"/>
+    <path fill="url(#purpleCore)" d="M655.5 657.8c6.4-6.4 16.8-6.4 23.2 0l133.5 133.5c6.4 6.4 6.4 16.8 0 23.2l-15.7 15.7c-6.4 6.4-16.8 6.4-23.2 0L639.8 696.7c-6.4-6.4-6.4-16.8 0-23.2l15.7-15.7Z"/>
+
+    <!-- Top-left glossy highlight -->
+    <path fill="url(#whiteSheen)" opacity="0.7" filter="url(#innerGlow)" d="M302.7 308.9C354.6 247.3 430 213 511.5 213c56.3 0 108.8 15.7 153.6 43.2 9.8 6 10.9 19.9 2.2 27.3l-39.7 33.8c-5.3 4.5-12.8 5.1-18.9 1.8-28.7-15.5-61.9-24.1-97.2-24.1-57.3 0-109.9 23.1-147.4 63.2-5 5.3-12.9 6.7-19.4 3.5l-37.2-18.7c-12.7-6.4-14-23.3-4.8-34.1Z"/>
+
+    <!-- Small black precision notch for a sharper tech feel -->
+    <path fill="#07020D" opacity="0.92" d="M724 177c18.8 0 34 15.2 34 34v42c0 18.8-15.2 34-34 34h-42c-18.8 0-34-15.2-34-34v-42c0-18.8 15.2-34 34-34h42Z"/>
+    <circle cx="703" cy="232" r="23" fill="#FFFFFF" opacity="0.94"/>
   </g>
 </svg>

@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import Image from "next/image";
 import { useStore, type View } from "@/store";
 import {
@@ -10,16 +11,24 @@ import {
   Plug,
   Settings,
   Command,
+  Star,
+  Brain,
+  Database,
+  Activity,
 } from "lucide-react";
 
-const items: { id: View; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
-  { id: "chat", label: "Chat", icon: MessageSquare },
-  { id: "wiki", label: "Wiki", icon: BookOpen },
-  { id: "graph", label: "Graph", icon: Network },
-  { id: "files", label: "Files", icon: Folder },
-  { id: "agents", label: "Agents", icon: Cpu },
-  { id: "mcp", label: "MCP", icon: Plug },
-  { id: "settings", label: "Settings", icon: Settings },
+type NavItem = { id: View; label: string; icon: React.ComponentType<{ size?: number }>; kbd: string };
+
+const NAV: NavItem[] = [
+  { id: "chat",     label: "Chat",        icon: MessageSquare, kbd: "⌘1" },
+  { id: "wiki",     label: "Wiki",        icon: BookOpen,      kbd: "⌘2" },
+  { id: "graph",    label: "Galaxy",      icon: Network,       kbd: "⌘3" },
+  { id: "files",    label: "Files",       icon: Folder,        kbd: "⌘4" },
+  { id: "agents",   label: "Agents",      icon: Cpu,           kbd: "⌘5" },
+  { id: "mcp",      label: "MCP servers", icon: Plug,          kbd: "⌘6" },
+];
+const BOTTOM: NavItem[] = [
+  { id: "settings", label: "Settings", icon: Settings, kbd: "⌘," },
 ];
 
 export function Sidebar() {
@@ -28,26 +37,47 @@ export function Sidebar() {
   const sidebarOpen = useStore((s) => s.sidebarOpen);
   const setSidebarOpen = useStore((s) => s.setSidebarOpen);
   const setPaletteOpen = useStore((s) => s.setPaletteOpen);
+  const modelInfo = useStore((s) => s.modelInfo);
+  const setModelInfo = useStore((s) => s.setModelInfo);
+
+  useEffect(() => {
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const r = await fetch("/api/models", { cache: "no-store" });
+        if (!r.ok) throw new Error();
+        const d = await r.json();
+        if (!cancelled) setModelInfo(d);
+      } catch {
+        if (!cancelled) setModelInfo({ host: "", chatModel: "—", embedModel: "—", models: [], online: false, vectorCount: 0, sources: [] });
+      }
+    };
+    tick();
+    const i = setInterval(tick, 5000);
+    return () => { cancelled = true; clearInterval(i); };
+  }, [setModelInfo]);
 
   return (
     <aside
-      className={`glass-strong flex flex-col w-[230px] shrink-0 h-full relative z-10 sidebar-mobile ${sidebarOpen ? "open" : ""}`}
+      className={`star-grid flex flex-col w-[252px] shrink-0 h-full relative z-10 sidebar-mobile ${sidebarOpen ? "open" : ""}`}
+      style={{ background: "var(--navy)", borderRight: "0.5px solid var(--border)" }}
       aria-label="Primary navigation"
     >
-      <div className="px-4 py-4 flex items-center gap-2.5 border-b border-[var(--border)]">
-        <div className="w-9 h-9 rounded-lg overflow-hidden shadow-lg shadow-[var(--accent)]/30 relative">
-          <Image src="/logo.svg" alt="Own Wiki logo" width={36} height={36} priority />
+      <div className="flex items-center gap-3 px-[22px] py-[20px]" style={{ borderBottom: "0.5px solid var(--border-2)" }}>
+        <div className="w-9 h-9 shrink-0 rounded-lg overflow-hidden">
+          <Image src="/logo.svg" alt="Own Wiki" width={36} height={36} priority />
         </div>
         <div>
-          <div className="font-semibold text-[15px] leading-tight tracking-tight">Own Wiki</div>
-          <div className="text-[10px] text-[var(--text-faint)] uppercase tracking-wider">
-            Personal Knowledge OS
-          </div>
+          <div className="serif text-[22px] leading-none" style={{ color: "var(--fg-1)" }}>Own Wiki</div>
+          <div className="mono text-[9px] tracking-[0.18em] uppercase mt-1" style={{ color: "var(--fg-3)" }}>v1.0 · local</div>
         </div>
       </div>
 
-      <nav className="flex-1 px-2 py-3 space-y-0.5" aria-label="Sections">
-        {items.map((it) => {
+      <nav className="px-[14px] pt-[18px] pb-[8px]" aria-label="Workspace">
+        <div className="mono text-[10px] tracking-[0.18em] uppercase px-[10px] pb-[10px]" style={{ color: "var(--fg-3)" }}>
+          Workspace
+        </div>
+        {NAV.map((it) => {
           const active = view === it.id;
           const Icon = it.icon;
           return (
@@ -55,35 +85,99 @@ export function Sidebar() {
               key={it.id}
               onClick={() => setView(it.id)}
               aria-current={active ? "page" : undefined}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] transition-all ${
-                active
-                  ? "bg-gradient-to-r from-[var(--accent)]/20 to-transparent text-white border-l-2 border-[var(--accent)] shadow-inner"
-                  : "text-[var(--text-dim)] hover:bg-[var(--bg-card)] hover:text-white border-l-2 border-transparent"
-              }`}
+              className="w-full flex items-center gap-3 px-[12px] py-[9px] rounded text-[14px] transition-colors relative"
+              style={{
+                color: active ? "var(--violet-2)" : "var(--fg-2)",
+                background: active ? "rgba(168, 85, 247, 0.06)" : "transparent",
+              }}
+              onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "rgba(245, 240, 228, 0.03)"; }}
+              onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
             >
+              {active && <span className="absolute left-[-14px] top-[8px] bottom-[8px] w-[2px]" style={{ background: "var(--violet)" }} />}
               <Icon size={16} />
               <span>{it.label}</span>
+              <span className="mono ml-auto text-[10px]" style={{ color: "var(--fg-4)" }}>{it.kbd}</span>
             </button>
           );
         })}
       </nav>
 
-      <div className="px-2 pb-2">
+      <div className="px-[14px] pt-[18px] pb-[8px]">
+        <div className="mono text-[10px] tracking-[0.18em] uppercase px-[10px] pb-[10px]" style={{ color: "var(--fg-3)" }}>
+          Pinned pages
+        </div>
+        {["own-wiki", "karpathy-llm-wiki", "ollama", "rag-pipeline"].map((slug) => (
+          <button
+            key={slug}
+            onClick={() => { useStore.getState().setSelectedSlug(slug); useStore.getState().setView("wiki"); }}
+            className="w-full flex items-center gap-3 px-[12px] py-[7px] rounded text-[13px] transition-colors"
+            style={{ color: "var(--fg-2)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(245, 240, 228, 0.03)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          >
+            <Star size={13} style={{ color: "var(--brass)" }} />
+            <span>{slug}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1" />
+
+      <nav className="px-[14px] pb-[8px]" aria-label="Settings">
+        {BOTTOM.map((it) => {
+          const active = view === it.id;
+          const Icon = it.icon;
+          return (
+            <button
+              key={it.id}
+              onClick={() => setView(it.id)}
+              className="w-full flex items-center gap-3 px-[12px] py-[9px] rounded text-[14px] transition-colors relative"
+              style={{
+                color: active ? "var(--violet-2)" : "var(--fg-2)",
+                background: active ? "rgba(168, 85, 247, 0.06)" : "transparent",
+              }}
+            >
+              {active && <span className="absolute left-[-14px] top-[8px] bottom-[8px] w-[2px]" style={{ background: "var(--violet)" }} />}
+              <Icon size={16} />
+              <span>{it.label}</span>
+              <span className="mono ml-auto text-[10px]" style={{ color: "var(--fg-4)" }}>{it.kbd}</span>
+            </button>
+          );
+        })}
         <button
           onClick={() => setPaletteOpen(true)}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] text-[var(--text-dim)] hover:text-white hover:bg-[var(--bg-card)] border border-[var(--border)]"
+          className="w-full flex items-center gap-3 px-[12px] py-[9px] rounded text-[13px] transition-colors mt-1"
+          style={{ color: "var(--fg-3)" }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--fg-1)")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--fg-3)")}
           aria-label="Open command palette"
         >
-          <Command size={12} />
+          <Command size={14} />
           <span className="flex-1 text-left">Command palette</span>
           <span className="kbd">⌘K</span>
         </button>
-      </div>
+      </nav>
 
-      <div className="px-4 py-3 border-t border-[var(--border)] text-[10px] text-[var(--text-faint)]">
-        <div className="flex items-center gap-1.5">
-          <span className="dot dot-violet pulse-soft" />
-          local-first · ollama · v1.0
+      <div className="m-[14px] p-[14px] rounded-md" style={{ background: "var(--navy-2)", border: "0.5px solid var(--border)" }}>
+        <div className="flex items-center gap-2 mono text-[11px] mb-[6px]" style={{ color: "var(--fg-2)" }}>
+          <span className="status-dot" style={{ background: modelInfo?.online ? "var(--success)" : "var(--danger)" }} />
+          <span style={{ color: "var(--fg-3)", flex: 1 }}>ollama</span>
+          <span style={{ color: "var(--fg-1)" }}>{modelInfo?.online ? "live" : "offline"}</span>
+        </div>
+        <div className="flex items-center gap-2 mono text-[11px] mb-[6px]">
+          <Brain size={11} style={{ color: "var(--fg-3)" }} />
+          <span style={{ color: "var(--fg-3)", flex: 1 }}>chat</span>
+          <span style={{ color: "var(--fg-1)" }}>{modelInfo?.chatModel?.replace(/:latest$/, "") || "—"}</span>
+        </div>
+        <div className="flex items-center gap-2 mono text-[11px] mb-[6px]">
+          <Database size={11} style={{ color: "var(--fg-3)" }} />
+          <span style={{ color: "var(--fg-3)", flex: 1 }}>embed</span>
+          <span style={{ color: "var(--fg-1)" }}>{modelInfo?.embedModel?.replace(/:latest$/, "").slice(0, 14) || "—"}</span>
+        </div>
+        <div className="flex items-center gap-2 mono text-[11px]">
+          <Activity size={11} style={{ color: "var(--fg-3)" }} />
+          <span style={{ color: "var(--fg-3)", flex: 1 }}>vault</span>
+          <span style={{ color: "var(--fg-1)" }}>{modelInfo?.vectorCount ?? 0} chunks</span>
         </div>
       </div>
 

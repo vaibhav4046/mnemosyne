@@ -42,7 +42,7 @@ async function go() {
   await snap("02-wiki");
 
   // 03 — graph
-  await clickNav("Graph");
+  await clickNav("Galaxy");
   await page.waitForTimeout(4500);
   await snap("03-graph");
 
@@ -57,7 +57,7 @@ async function go() {
   await snap("05-agents");
 
   // 06 — MCP
-  await clickNav("MCP");
+  await clickNav("MCP servers");
   await page.waitForTimeout(1800);
   await snap("06-mcp");
 

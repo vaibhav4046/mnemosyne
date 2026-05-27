@@ -1,0 +1,324 @@
+/* ==========================================================================
+   Orbital Quill — Design Tokens
+   Colors, type, spacing, radii, shadows, motion.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* ---------- Color: core palette ---------- */
+  --void:           #08090f;  /* deeper than navy, true space black */
+  --navy:           #0f1220;  /* primary dark surface */
+  --navy-2:         #161a2d;  /* raised dark surface */
+  --navy-3:         #1f2440;  /* hover dark surface */
+  --ink:            #050610;  /* text on paper */
+  --ink-2:          #2b2e3d;  /* secondary text on paper */
+  --ink-3:          #6a6d80;  /* tertiary text */
+
+  --paper:          #f5f0e4;  /* warm cream, primary light surface */
+  --paper-2:        #ece6d5;  /* paper shadow / secondary light */
+  --moon:           #fbfaf5;  /* near-white, card interiors */
+
+  --cyan:           #5ce0d8;  /* phosphor — primary accent */
+  --cyan-2:         #3bc0b8;  /* hover accent */
+  --cyan-deep:      #1a6f6a;  /* active / text-on-paper accent */
+
+  --mars:           #c8685a;  /* warm rust — secondary accent */
+  --brass:          #c9a86a;  /* warm metallic — tertiary accent */
+
+  /* ---------- Color: semantic ---------- */
+  --success:        #7cc49b;  /* desaturated sage, fits space palette */
+  --warning:        #e0b45c;  /* muted amber */
+  --danger:         #d06a6a;  /* muted ember */
+  --info:           var(--cyan);
+
+  /* ---------- Color: surfaces ---------- */
+  --bg-void:        var(--void);
+  --bg-navy:        var(--navy);
+  --bg-paper:       var(--paper);
+  --bg-moon:        var(--moon);
+
+  /* ---------- Color: foregrounds (semantic) ---------- */
+  --fg-on-dark-1:   #f5f0e4;  /* primary text on dark */
+  --fg-on-dark-2:   rgba(245, 240, 228, 0.68);
+  --fg-on-dark-3:   rgba(245, 240, 228, 0.44);
+  --fg-on-dark-4:   rgba(245, 240, 228, 0.22);
+
+  --fg-on-light-1:  var(--ink);
+  --fg-on-light-2:  var(--ink-2);
+  --fg-on-light-3:  var(--ink-3);
+
+  /* ---------- Color: borders ---------- */
+  --border-dark:    rgba(245, 240, 228, 0.12);
+  --border-dark-2:  rgba(245, 240, 228, 0.06);
+  --border-light:   rgba(5, 6, 16, 0.08);
+  --border-light-2: rgba(5, 6, 16, 0.04);
+
+  /* ---------- Type: families ---------- */
+  --font-display:   'Cormorant Garamond', 'Iowan Old Style', 'Apple Garamond', Garamond, serif;
+  --font-body:      'Inter Tight', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:      'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+  /* ---------- Type: scale ---------- */
+  --fs-xs:    12px;
+  --fs-sm:    14px;
+  --fs-base:  16px;
+  --fs-md:    18px;
+  --fs-lg:    22px;
+  --fs-xl:    28px;
+  --fs-2xl:   36px;
+  --fs-3xl:   48px;
+  --fs-4xl:   64px;
+  --fs-5xl:   88px;
+  --fs-6xl:   120px;
+
+  /* ---------- Type: line heights ---------- */
+  --lh-tight:   1.08;
+  --lh-snug:    1.2;
+  --lh-normal:  1.5;
+  --lh-relaxed: 1.6;
+  --lh-loose:   1.8;
+
+  /* ---------- Type: tracking ---------- */
+  --tr-tight:   -0.02em;
+  --tr-normal:  0;
+  --tr-wide:    0.04em;
+  --tr-wider:   0.08em;
+  --tr-widest:  0.16em;
+
+  /* ---------- Spacing (4px base) ---------- */
+  --sp-1:   4px;
+  --sp-2:   8px;
+  --sp-3:   12px;
+  --sp-4:   16px;
+  --sp-5:   24px;
+  --sp-6:   32px;
+  --sp-7:   48px;
+  --sp-8:   64px;
+  --sp-9:   96px;
+  --sp-10: 128px;
+
+  /* ---------- Radii ---------- */
+  --radius-xs:  2px;
+  --radius-sm:  4px;
+  --radius-md:  6px;
+  --radius-lg:  12px;
+  --radius-pill: 999px;
+
+  /* ---------- Shadows ---------- */
+  --shadow-1:
+    0 1px 0 rgba(255,255,255,0.02),
+    0 2px 4px -2px rgba(0,0,0,0.4);
+  --shadow-2:
+    0 1px 0 rgba(255,255,255,0.03),
+    0 8px 20px -8px rgba(0,0,0,0.55);
+  --shadow-3:
+    0 1px 0 rgba(255,255,255,0.03),
+    0 24px 48px -20px rgba(0,0,0,0.6);
+  --shadow-menu:
+    0 12px 32px -8px rgba(5, 3, 0, 0.5),
+    0 2px 6px rgba(5, 3, 0, 0.3);
+  --shadow-focus: 0 0 0 3px rgba(92, 224, 216, 0.32);
+
+  /* ---------- Motion ---------- */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro:    120ms;
+  --dur-normal:   240ms;
+  --dur-scenic:   480ms;
+  --dur-ambient: 60000ms;
+
+  /* ---------- Layout ---------- */
+  --container-max: 1280px;
+  --gutter:        80px;
+  --header-h:      64px;
+}
+
+/* ==========================================================================
+   Semantic element styles
+   Apply on any element with a .oq scope, or the document root.
+   ========================================================================== */
+
+.oq,
+.oq * {
+  box-sizing: border-box;
+}
+
+.oq {
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  line-height: var(--lh-relaxed);
+  color: var(--fg-on-dark-1);
+  background: var(--bg-void);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.oq h1, .oq .h1 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(48px, 8vw, var(--fs-6xl));
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tr-tight);
+  margin: 0;
+}
+.oq h2, .oq .h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(36px, 5vw, var(--fs-4xl));
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tr-tight);
+  margin: 0;
+}
+.oq h3, .oq .h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-2xl);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tr-tight);
+  margin: 0;
+}
+.oq h4, .oq .h4 {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--fs-lg);
+  line-height: var(--lh-snug);
+  letter-spacing: 0;
+  margin: 0;
+}
+.oq h5, .oq .h5 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--fs-md);
+  line-height: var(--lh-snug);
+  margin: 0;
+}
+
+.oq p, .oq .p {
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  line-height: var(--lh-relaxed);
+  color: var(--fg-on-dark-2);
+  max-width: 65ch;
+  margin: 0;
+}
+
+.oq .eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: var(--tr-widest);
+  text-transform: uppercase;
+  color: var(--fg-on-dark-3);
+}
+
+.oq .mono,
+.oq code,
+.oq kbd {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  letter-spacing: var(--tr-wide);
+}
+
+.oq .serif-italic {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Light-surface variant */
+.oq-paper {
+  background: var(--bg-paper);
+  color: var(--fg-on-light-1);
+}
+.oq-paper p { color: var(--fg-on-light-2); }
+.oq-paper .eyebrow { color: var(--fg-on-light-3); }
+
+/* ---------- Utilities ---------- */
+.oq .star-grid {
+  background-image: radial-gradient(circle, rgba(245,240,228,0.14) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: 0 0;
+}
+.oq .hairline-top { border-top: 0.5px solid var(--border-dark); }
+.oq .hairline-bottom { border-bottom: 0.5px solid var(--border-dark); }
+.oq-paper .hairline-top { border-top-color: var(--border-light); }
+.oq-paper .hairline-bottom { border-bottom-color: var(--border-light); }
+
+/* ---------- Buttons ---------- */
+.oq .btn {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  letter-spacing: 0;
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--dur-normal) var(--ease-out),
+              color var(--dur-normal) var(--ease-out),
+              border-color var(--dur-normal) var(--ease-out),
+              transform var(--dur-micro) var(--ease-out);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1;
+}
+.oq .btn:active { transform: scale(0.98); }
+.oq .btn-primary {
+  background: var(--cyan);
+  color: var(--void);
+}
+.oq .btn-primary:hover { background: var(--cyan-2); }
+.oq .btn-secondary {
+  background: transparent;
+  color: var(--fg-on-dark-1);
+  border-color: var(--border-dark);
+}
+.oq .btn-secondary:hover { border-color: var(--fg-on-dark-3); }
+.oq-paper .btn-secondary {
+  color: var(--ink);
+  border-color: var(--border-light);
+}
+.oq-paper .btn-secondary:hover { border-color: var(--ink); }
+.oq .btn-ghost {
+  background: transparent;
+  color: var(--fg-on-dark-1);
+}
+.oq .btn-ghost:hover { color: var(--cyan); }
+
+/* ---------- Inputs ---------- */
+.oq .input {
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  padding: 12px 14px;
+  background: transparent;
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-sm);
+  color: var(--fg-on-dark-1);
+  width: 100%;
+  transition: border-color var(--dur-normal) var(--ease-out);
+}
+.oq .input:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: var(--shadow-focus);
+}
+
+/* ---------- Tag / Badge ---------- */
+.oq .tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: var(--tr-widest);
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+  border: 0.5px solid var(--border-dark);
+  color: var(--fg-on-dark-2);
+}
+.oq .tag-accent { color: var(--cyan); border-color: rgba(92,224,216,0.4); }
+.oq .tag-warm   { color: var(--brass); border-color: rgba(201,168,106,0.4); }
+.oq .tag-mars   { color: var(--mars); border-color: rgba(200,104,90,0.4); }

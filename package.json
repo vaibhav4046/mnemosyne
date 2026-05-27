@@ -81,8 +81,7 @@
           "target": "portable",
           "arch": ["x64"]
         }
-      ],
-      "icon": "public/logo.svg"
+      ]
     },
     "portable": {
       "artifactName": "OwnWiki-${version}-portable.exe"

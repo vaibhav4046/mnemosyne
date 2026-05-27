@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useStore } from "@/store";
-import { BookOpen, Plus, Save, RefreshCcw, Tag, Search } from "lucide-react";
+import { BookOpen, Plus, Save, RefreshCcw, Tag, Search, X, Trash2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { WikiPage } from "@/lib/wiki";
@@ -11,6 +11,8 @@ type PageList = { pages: (Omit<WikiPage, "body" | "raw"> & { preview: string })[
 export function WikiPanel() {
   const selectedSlug = useStore((s) => s.selectedSlug);
   const setSelectedSlug = useStore((s) => s.setSelectedSlug);
+  const openModal = useStore((s) => s.openModal);
+  const toast = useStore((s) => s.toast);
   const [pages, setPages] = useState<PageList["pages"]>([]);
   const [page, setPage] = useState<WikiPage | null>(null);
   const [editing, setEditing] = useState(false);
@@ -20,54 +22,112 @@ export function WikiPanel() {
   const setView = useStore((s) => s.setView);
 
   const refresh = useCallback(async () => {
-    const r = await fetch("/api/wiki");
-    const d: PageList = await r.json();
-    setPages(d.pages);
-    if (!selectedSlug && d.pages.length) setSelectedSlug(d.pages[0].slug);
-  }, [selectedSlug, setSelectedSlug]);
+    try {
+      const r = await fetch("/api/wiki");
+      const d: PageList = await r.json();
+      setPages(d.pages);
+      if (!selectedSlug && d.pages.length) setSelectedSlug(d.pages[0].slug);
+    } catch (e) {
+      toast({ kind: "error", msg: `Failed to load wiki: ${e instanceof Error ? e.message : e}` });
+    }
+  }, [selectedSlug, setSelectedSlug, toast]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
   useEffect(() => {
-    if (!selectedSlug) return;
+    if (!selectedSlug) {
+      setPage(null);
+      return;
+    }
     (async () => {
-      const r = await fetch(`/api/wiki/${selectedSlug}`);
-      if (!r.ok) {
+      try {
+        const r = await fetch(`/api/wiki/${selectedSlug}`);
+        if (!r.ok) {
+          setPage(null);
+          return;
+        }
+        const d = (await r.json()) as WikiPage;
+        setPage(d);
+        setEditBody(d.body);
+        setEditTitle(d.title);
+        setEditing(false);
+      } catch {
         setPage(null);
-        return;
       }
-      const d = (await r.json()) as WikiPage;
-      setPage(d);
-      setEditBody(d.body);
-      setEditTitle(d.title);
-      setEditing(false);
     })();
   }, [selectedSlug]);
 
   async function save() {
     if (!page) return;
-    await fetch(`/api/wiki/${page.slug}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: editTitle, body: editBody, tags: page.tags, sources: page.sources }),
-    });
-    setEditing(false);
-    refresh();
+    try {
+      const r = await fetch(`/api/wiki/${page.slug}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: editTitle, body: editBody, tags: page.tags, sources: page.sources }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({ error: "save failed" }));
+        throw new Error(d.error);
+      }
+      setEditing(false);
+      toast({ kind: "success", msg: `Saved ${page.slug}` });
+      refresh();
+    } catch (e) {
+      toast({ kind: "error", msg: e instanceof Error ? e.message : "save failed" });
+    }
   }
 
-  async function create() {
-    const title = prompt("Page title?");
-    if (!title) return;
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    await fetch(`/api/wiki/${slug}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, body: "# " + title + "\n\nNew page." }),
+  function newPage() {
+    openModal({
+      kind: "prompt",
+      title: "New wiki page",
+      placeholder: "page title",
+      onSubmit: async (title) => {
+        const slug = title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "")
+          .slice(0, 80);
+        if (!slug) {
+          toast({ kind: "error", msg: "Title must contain letters or numbers" });
+          return;
+        }
+        try {
+          const r = await fetch(`/api/wiki/${slug}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, body: `# ${title}\n\nNew page.` }),
+          });
+          if (!r.ok) {
+            const d = await r.json().catch(() => ({ error: "create failed" }));
+            throw new Error(d.error);
+          }
+          setSelectedSlug(slug);
+          await refresh();
+          toast({ kind: "success", msg: `Created [[${slug}]]` });
+        } catch (e) {
+          toast({ kind: "error", msg: e instanceof Error ? e.message : "create failed" });
+        }
+      },
     });
-    setSelectedSlug(slug);
-    refresh();
+  }
+
+  function deleteCurrent() {
+    if (!page) return;
+    openModal({
+      kind: "confirm",
+      title: `Delete ${page.slug}?`,
+      body: "This removes the markdown file. Sources and embeddings stay.",
+      danger: true,
+      onConfirm: async () => {
+        await fetch(`/api/wiki/${page.slug}`, { method: "DELETE" });
+        toast({ kind: "success", msg: `Deleted ${page.slug}` });
+        setSelectedSlug(null);
+        refresh();
+      },
+    });
   }
 
   const filtered = pages.filter(
@@ -84,13 +144,14 @@ export function WikiPanel() {
         <header className="h-12 px-4 flex items-center justify-between border-b border-[var(--border)]">
           <div className="flex items-center gap-2">
             <BookOpen size={14} className="text-[var(--accent)]" />
-            <span className="text-[13px] font-medium">{pages.length} pages</span>
+            <span className="text-[13px] font-medium">Wiki</span>
+            <span className="text-[11px] text-[var(--text-faint)]">· {pages.length} pages</span>
           </div>
           <div className="flex gap-1">
-            <button onClick={refresh} className="btn-ghost btn p-1.5" title="refresh">
+            <button onClick={refresh} className="btn-ghost btn p-1.5" title="refresh" aria-label="refresh wiki">
               <RefreshCcw size={13} />
             </button>
-            <button onClick={create} className="btn-ghost btn p-1.5" title="new page">
+            <button onClick={newPage} className="btn-ghost btn p-1.5" title="new page" aria-label="new page">
               <Plus size={13} />
             </button>
           </div>
@@ -103,13 +164,16 @@ export function WikiPanel() {
               onChange={(e) => setQ(e.target.value)}
               className="input pl-7 text-[12px] py-1.5"
               placeholder="filter…"
+              aria-label="filter pages"
             />
           </div>
         </div>
         <div className="flex-1 overflow-y-auto scroll-thin">
           {filtered.length === 0 && (
             <div className="text-[12px] text-[var(--text-faint)] px-4 py-6 text-center">
-              No pages. Ingest a source from Files → ingest, or create one with +.
+              {pages.length === 0
+                ? "No pages yet. Use Files → ingest, or click + to create one."
+                : "No matches."}
             </div>
           )}
           {filtered.map((p) => (
@@ -136,29 +200,44 @@ export function WikiPanel() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {page ? (
           <>
             <header className="h-12 px-5 flex items-center justify-between border-b border-[var(--border)] glass">
-              <div>
+              <div className="flex-1 min-w-0">
                 {editing ? (
-                  <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="input text-[14px] py-1" />
+                  <input
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="input text-[14px] py-1 max-w-md"
+                    aria-label="page title"
+                  />
                 ) : (
-                  <div className="flex items-center gap-3">
-                    <span className="font-semibold text-[15px]">{page.title}</span>
-                    <span className="chip">/{page.slug}</span>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="font-semibold text-[15px] truncate">{page.title}</span>
+                    <span className="chip shrink-0">/{page.slug}</span>
                   </div>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 shrink-0">
                 {editing ? (
-                  <button onClick={save} className="btn btn-primary">
-                    <Save size={13} /> save
-                  </button>
+                  <>
+                    <button onClick={() => { setEditing(false); setEditBody(page.body); setEditTitle(page.title); }} className="btn">
+                      <X size={13} /> cancel
+                    </button>
+                    <button onClick={save} className="btn btn-primary">
+                      <Save size={13} /> save
+                    </button>
+                  </>
                 ) : (
-                  <button onClick={() => setEditing(true)} className="btn">
-                    edit
-                  </button>
+                  <>
+                    <button onClick={deleteCurrent} className="btn-ghost btn" title="delete page" aria-label="delete page">
+                      <Trash2 size={13} />
+                    </button>
+                    <button onClick={() => setEditing(true)} className="btn">
+                      edit
+                    </button>
+                  </>
                 )}
               </div>
             </header>
@@ -169,6 +248,7 @@ export function WikiPanel() {
                   onChange={(e) => setEditBody(e.target.value)}
                   className="input scroll-thin font-mono text-[12.5px] min-h-[60vh] w-full"
                   spellCheck={false}
+                  aria-label="page body"
                 />
               ) : (
                 <article className="prose-mn max-w-3xl">
@@ -213,7 +293,19 @@ export function WikiPanel() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-[var(--text-faint)]">Select a page.</div>
+          <div className="flex-1 flex items-center justify-center text-[var(--text-faint)] text-sm">
+            {pages.length === 0 ? (
+              <div className="text-center">
+                <BookOpen className="mx-auto mb-3 opacity-50" size={32} />
+                <p>The vault is empty.</p>
+                <button onClick={newPage} className="btn btn-primary mt-3">
+                  <Plus size={13} /> create first page
+                </button>
+              </div>
+            ) : (
+              <p>Select a page.</p>
+            )}
+          </div>
         )}
       </div>
     </div>

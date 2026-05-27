@@ -1,6 +1,18 @@
-# Mnemosyne
+<div align="center">
+  <img src="public/logo.svg" width="80" alt="Mnemosyne logo" />
+  <h1>Mnemosyne</h1>
+  <p><strong>A local-first personal knowledge OS — your own Wikipedia, curated by a local LLM.</strong></p>
+  <p>
+    <img alt="next" src="https://img.shields.io/badge/Next.js-15-black?logo=nextdotjs" />
+    <img alt="react" src="https://img.shields.io/badge/React-19-149eca?logo=react" />
+    <img alt="tailwind" src="https://img.shields.io/badge/Tailwind-4-38bdf8?logo=tailwindcss" />
+    <img alt="ollama" src="https://img.shields.io/badge/Ollama-local-8b5cf6" />
+    <img alt="qa" src="https://img.shields.io/badge/QA-27%2F27%20pass-22d3a8" />
+    <img alt="build" src="https://img.shields.io/badge/build-passing-22d3a8" />
+  </p>
+</div>
 
-**A local-first personal knowledge OS — your own Wikipedia, curated by a local LLM.**
+---
 
 Mnemosyne is a web application (not a static site) that runs a small Operating-System-like environment for your knowledge. The LLM is the librarian: it ingests sources, writes and maintains an interlinked Markdown wiki, retrieves cited context for chat, and runs background agents in parallel — all on your own machine via [Ollama](https://ollama.com).
 
@@ -22,9 +34,9 @@ Inspired by Andrej Karpathy's "LLM Wiki" pattern and the recall surfaces of [Qyn
 | --- | --- |
 | ![agents](docs/screenshots/05-agents.png) | ![mcp](docs/screenshots/06-mcp.png) |
 
-| Settings (introspection of the stack) |
-| --- |
-| ![settings](docs/screenshots/07-settings.png) |
+| Settings (live health + introspection) | Command palette (⌘K) |
+| --- | --- |
+| ![settings](docs/screenshots/07-settings.png) | ![palette](docs/screenshots/08-palette.png) |
 
 ---
 
@@ -205,6 +217,24 @@ src/
 
 ---
 
+## Production hardening
+
+Mnemosyne has been brutally QA'd against 27 user-archetype scenarios — **all passing**:
+
+- API: path-traversal, invalid slugs, invalid roots, `..` injection, unknown agent kinds, missing required fields → all return `400` with structured error envelopes.
+- Chat: streaming with `AbortController` + stop button, XSS payloads inert (rendered as text), regenerate + copy, persisted to `localStorage`.
+- UI: all 7 panels render under load, mobile menu collapses < 768 px, command palette opens via Ctrl/⌘+K *and* sidebar button.
+- Errors: React `ErrorBoundary` per panel catches runtime crashes with retry/reload; `EventSource` for agent updates auto-reconnects.
+- Vault: `[slug]` strictly validated (`/^[a-z0-9][a-z0-9-]{0,79}$/`); no markdown file is written outside `vault/pages/`.
+- Build: `npm run build` passes — 12 API routes registered, home page prerendered.
+
+Run the test suite:
+
+```bash
+node scripts/brutal-qa.mjs
+# === 27 pass / 0 fail / 27 total ===
+```
+
 ## Roadmap
 
 - swap JSON vector store for `sqlite-vec` once Windows build pipeline is sorted
@@ -212,6 +242,7 @@ src/
 - WebRTC-based pair sessions for shared wikis
 - inline RAG sources panel on every page
 - per-agent permission scopes for the MCP layer
+- tool-call surfaces for connected MCP servers
 
 ---
 

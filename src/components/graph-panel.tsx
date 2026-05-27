@@ -47,9 +47,9 @@ export function GraphPanel() {
       <header className="h-12 px-5 flex items-center justify-between border-b border-[var(--border)] glass">
         <div className="flex items-center gap-2.5">
           <Network size={15} className="text-[var(--accent)]" />
-          <span className="font-medium text-[14px]">Galaxy</span>
+          <span className="font-medium text-[14px]">Graph</span>
           <span className="text-[11px] text-[var(--text-faint)]">
-            · {data.nodes.length} nodes · {data.links.length} links
+            · galaxy · {data.nodes.length} nodes · {data.links.length} links
           </span>
         </div>
         <button onClick={load} className="btn-ghost btn">

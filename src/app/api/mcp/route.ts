@@ -28,15 +28,25 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const body = (await req.json()) as
     | { action: "add"; server: { name: string; command: string; args?: string[] } }
+    | { action: "remove"; name: string }
     | { action: "connect"; name: string }
     | { action: "disconnect"; name: string }
     | { action: "call"; name: string; tool: string; args: Record<string, unknown> };
 
   const cfg = await loadConfigs();
   if (body.action === "add") {
+    if (!body.server?.name || !body.server?.command) {
+      return NextResponse.json({ error: "name and command required" }, { status: 400 });
+    }
     cfg.servers = (cfg.servers || []).filter((s: { name: string }) => s.name !== body.server.name);
     cfg.servers.push(body.server);
     await saveConfigs(cfg);
+    return NextResponse.json({ ok: true });
+  }
+  if (body.action === "remove") {
+    cfg.servers = (cfg.servers || []).filter((s: { name: string }) => s.name !== body.name);
+    await saveConfigs(cfg);
+    try { await disconnect(body.name); } catch {}
     return NextResponse.json({ ok: true });
   }
   if (body.action === "connect") {

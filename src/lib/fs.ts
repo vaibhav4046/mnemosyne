@@ -83,9 +83,10 @@ export async function statFile(root: keyof Roots | string, rel: string) {
 export async function extractText(absPath: string): Promise<string> {
   const ext = path.extname(absPath).toLowerCase();
   if (ext === ".pdf") {
-    const pdfParse = (await import("pdf-parse")).default;
+    const mod = (await import("pdf-parse")) as unknown as { default?: (b: Buffer) => Promise<{ text: string }>; pdf?: (b: Buffer) => Promise<{ text: string }> };
+    const pdfParse = mod.default || mod.pdf || (mod as unknown as (b: Buffer) => Promise<{ text: string }>);
     const buf = await fs.readFile(absPath);
-    const out = await pdfParse(buf);
+    const out = await (pdfParse as (b: Buffer) => Promise<{ text: string }>)(buf);
     return out.text;
   }
   if (ext === ".docx") {

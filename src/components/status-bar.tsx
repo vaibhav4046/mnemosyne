@@ -8,18 +8,32 @@ export function StatusBar() {
   const setModelInfo = useStore((s) => s.setModelInfo);
 
   useEffect(() => {
+    let cancelled = false;
     const tick = async () => {
       try {
-        const r = await fetch("/api/models");
+        const r = await fetch("/api/models", { cache: "no-store" });
+        if (!r.ok) throw new Error();
         const d = await r.json();
-        setModelInfo(d);
+        if (!cancelled) setModelInfo(d);
       } catch {
-        setModelInfo({ host: "", chatModel: "", embedModel: "", models: [], online: false, vectorCount: 0, sources: [] });
+        if (!cancelled)
+          setModelInfo({
+            host: "http://127.0.0.1:11434",
+            chatModel: "—",
+            embedModel: "—",
+            models: [],
+            online: false,
+            vectorCount: 0,
+            sources: [],
+          });
       }
     };
     tick();
-    const i = setInterval(tick, 8000);
-    return () => clearInterval(i);
+    const i = setInterval(tick, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(i);
+    };
   }, [setModelInfo]);
 
   const online = modelInfo?.online ?? false;

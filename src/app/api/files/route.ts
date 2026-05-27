@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listDir, readFile, writeFile, listRoots } from "@/lib/fs";
+import { validRoot, validRel, clampText, err } from "@/lib/validate";
 
 export const runtime = "nodejs";
 
@@ -9,24 +10,36 @@ export async function GET(req: NextRequest) {
   const rel = url.searchParams.get("rel") || "";
   const file = url.searchParams.get("file");
   if (!root) return NextResponse.json({ roots: listRoots() });
+  if (!validRoot(root)) return err(400, "invalid root");
+  if (rel && !validRel(rel)) return err(400, "invalid path");
   if (file) {
+    if (!validRel(file)) return err(400, "invalid file path");
     try {
       const content = await readFile(root, file);
-      return NextResponse.json({ content });
+      return NextResponse.json({ content: content.slice(0, 1_000_000) });
     } catch (e) {
-      return NextResponse.json({ error: e instanceof Error ? e.message : "read failed" }, { status: 400 });
+      return err(400, e instanceof Error ? e.message : "read failed");
     }
   }
   try {
     const entries = await listDir(root, rel);
     return NextResponse.json({ entries });
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "list failed" }, { status: 400 });
+    return err(400, e instanceof Error ? e.message : "list failed");
   }
 }
 
 export async function POST(req: NextRequest) {
-  const body = (await req.json()) as { root: string; rel: string; content: string };
-  await writeFile(body.root, body.rel, body.content);
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return err(400, "invalid JSON");
+  }
+  const b = body as { root?: unknown; rel?: unknown; content?: unknown };
+  if (!validRoot(b.root)) return err(400, "invalid root");
+  if (!validRel(b.rel)) return err(400, "invalid path");
+  const content = clampText(b.content, 1_000_000);
+  await writeFile(b.root as string, b.rel as string, content);
   return NextResponse.json({ ok: true });
 }

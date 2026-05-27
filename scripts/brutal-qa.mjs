@@ -79,7 +79,7 @@ async function ui() {
   await sleep(2500);
 
   // logo loaded
-  const logoVisible = await page.locator('img[alt="Mnemosyne logo"]').isVisible().catch(() => false);
+  const logoVisible = await page.locator('img[alt="Own Wiki"]').first().isVisible().catch(() => false);
   logoVisible ? pass("ui: logo visible") : fail("ui: logo visible", new Error("not visible"));
 
   // command palette via sidebar button
@@ -102,20 +102,31 @@ async function ui() {
     await sleep(300);
   }
 
-  // nav each view
-  const views = ["Chat", "Wiki", "Graph", "Files", "Agents", "MCP", "Settings"];
+  // nav each view — map nav label → header marker
+  const views = [
+    { nav: "Chat", check: () => page.locator('aside button:has-text("Chat")').first() },
+    { nav: "Wiki", check: () => page.locator('header span:has-text("Wiki")').first() },
+    { nav: "Galaxy", check: () => page.locator('header span:has-text("Galaxy")').first() },
+    { nav: "Files", check: () => page.locator('header span:has-text("Files")').first() },
+    { nav: "Agents", check: () => page.locator('header span:has-text("Agents")').first() },
+    { nav: "MCP servers", check: () => page.locator('header span:has-text("MCP")').first() },
+    { nav: "Settings", check: () => page.locator('header span:has-text("Settings")').first() },
+  ];
   for (const v of views) {
     try {
-      await page.locator(`aside nav button:has-text("${v}")`).first().click();
+      await page.locator(`aside nav button:has-text("${v.nav}")`).first().click();
       await sleep(800);
-      const visible = await page.locator(`header span:has-text("${v === "MCP" ? "MCP Servers" : v}")`).first().isVisible().catch(() => false);
-      visible ? pass(`ui: ${v} view renders`) : fail(`ui: ${v} view renders`, new Error("header not visible"));
-    } catch (e) { fail(`ui: ${v} view renders`, e); }
+      const visible = await v.check().isVisible().catch(() => false);
+      visible ? pass(`ui: ${v.nav} view renders`) : fail(`ui: ${v.nav} view renders`, new Error("marker not visible"));
+    } catch (e) { fail(`ui: ${v.nav} view renders`, e); }
   }
 
   // chat impatient — type then send via Enter
   await page.locator(`aside nav button:has-text("Chat")`).first().click();
   await sleep(600);
+  // ensure fresh thread
+  await page.locator('button:has-text("+ new thread")').first().click().catch(() => {});
+  await sleep(400);
   await page.fill("textarea", "Reply with the single word: pong");
   await page.keyboard.press("Enter");
   await sleep(20000);
@@ -130,6 +141,52 @@ async function ui() {
   await sleep(3000);
   const xss = await page.evaluate(() => (window).__xss);
   xss === undefined ? pass("ui: chat input does not execute injected script") : fail("ui: chat input does not execute injected script", new Error("XSS fired"));
+
+  // new endpoints sanity
+  try {
+    const r = await http("/api/auto-improve");
+    if (r.status === 200) pass("api: auto-improve GET ok"); else fail("api: auto-improve GET ok", new Error(`got ${r.status}`));
+  } catch (e) { fail("api: auto-improve GET ok", e); }
+
+  try {
+    const r = await http("/api/thread/title", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+    if (r.status === 400) pass("api: thread/title requires firstMessage"); else fail("api: thread/title requires firstMessage", new Error(`got ${r.status}`));
+  } catch (e) { fail("api: thread/title requires firstMessage", e); }
+
+  try {
+    const r = await http("/api/memory", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+    if (r.status === 400) pass("api: memory requires user+assistant"); else fail("api: memory requires user+assistant", new Error(`got ${r.status}`));
+  } catch (e) { fail("api: memory requires user+assistant", e); }
+
+  try {
+    const r = await http("/api/upload", { method: "POST" });
+    if (r.status === 400) pass("api: upload rejects non-multipart"); else fail("api: upload rejects non-multipart", new Error(`got ${r.status}`));
+  } catch (e) { fail("api: upload rejects non-multipart", e); }
+
+  try {
+    const r = await http("/api/export/own-wiki?format=md");
+    if (r.status === 200) pass("api: export markdown ok"); else fail("api: export markdown ok", new Error(`got ${r.status}`));
+  } catch (e) { fail("api: export markdown ok", e); }
+
+  try {
+    const r = await http("/api/export/own-wiki?format=csv");
+    if (r.status === 200 && typeof r.body === "string" && r.body.includes("\"slug\"")) pass("api: export csv ok"); else fail("api: export csv ok", new Error(`bad body`));
+  } catch (e) { fail("api: export csv ok", e); }
+
+  try {
+    const r = await http("/api/wiki/own-wiki");
+    if (r.status === 200 && Array.isArray(r.body.backlinks)) pass(`api: wiki page returns backlinks (${r.body.backlinks.length})`); else fail("api: wiki page returns backlinks", new Error("missing backlinks"));
+  } catch (e) { fail("api: wiki page returns backlinks", e); }
+
+  // resizable sidebar handle present
+  const handle = await page.locator('aside [role="separator"]').first().isVisible().catch(() => false);
+  handle ? pass("ui: sidebar resize handle present") : fail("ui: sidebar resize handle present", new Error("not visible"));
+
+  // galaxy search input
+  await page.locator(`aside nav button:has-text("Galaxy")`).first().click();
+  await sleep(1500);
+  const gSearch = await page.locator('input[placeholder*="filter nodes"]').first().isVisible().catch(() => false);
+  gSearch ? pass("ui: galaxy has node search") : fail("ui: galaxy has node search", new Error("missing"));
 
   // wiki new page via Wiki panel + button
   await page.locator(`aside nav button:has-text("Wiki")`).first().click();

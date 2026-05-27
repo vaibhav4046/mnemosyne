@@ -48,6 +48,27 @@ export function Sidebar() {
   const deleteThread = useStore((s) => s.deleteThread);
   const openModal = useStore((s) => s.openModal);
   const setSelectedSlug = useStore((s) => s.setSelectedSlug);
+  const sidebarWidth = useStore((s) => s.sidebarWidth);
+  const setSidebarWidth = useStore((s) => s.setSidebarWidth);
+
+  function startResize(e: React.MouseEvent) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = sidebarWidth;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    function onMove(ev: MouseEvent) {
+      setSidebarWidth(startW + (ev.clientX - startX));
+    }
+    function onUp() {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    }
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -68,10 +89,20 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`star-grid flex flex-col w-[252px] shrink-0 h-full relative z-10 sidebar-mobile ${sidebarOpen ? "open" : ""}`}
-      style={{ background: "var(--navy)", borderRight: "0.5px solid var(--border)" }}
+      className={`star-grid flex flex-col shrink-0 h-full relative z-10 sidebar-mobile ${sidebarOpen ? "open" : ""}`}
+      style={{ background: "var(--navy)", borderRight: "0.5px solid var(--border)", width: sidebarWidth }}
       aria-label="Primary navigation"
     >
+      <div
+        onMouseDown={startResize}
+        onDoubleClick={() => setSidebarWidth(252)}
+        className="absolute top-0 right-[-3px] bottom-0 w-[6px] z-20 cursor-col-resize group"
+        title="drag to resize · double-click to reset"
+        aria-label="resize sidebar"
+        role="separator"
+      >
+        <div className="absolute inset-y-0 left-[2px] w-[2px] opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "var(--violet)" }} />
+      </div>
       <div className="flex items-center gap-3 px-[22px] py-[20px]" style={{ borderBottom: "0.5px solid var(--border-2)" }}>
         <div className="w-9 h-9 shrink-0 rounded-lg overflow-hidden">
           <Image src="/logo.svg" alt="Own Wiki" width={36} height={36} priority />

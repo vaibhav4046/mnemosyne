@@ -34,6 +34,8 @@ type State = {
   setView: (v: View) => void;
   sidebarOpen: boolean;
   setSidebarOpen: (b: boolean) => void;
+  sidebarWidth: number;
+  setSidebarWidth: (w: number) => void;
 
   threads: Thread[];
   currentThreadId: string | null;
@@ -122,6 +124,12 @@ export const useStore = create<State>((set, get) => ({
   setView: (v) => set({ view: v, sidebarOpen: false }),
   sidebarOpen: false,
   setSidebarOpen: (b) => set({ sidebarOpen: b }),
+  sidebarWidth: typeof window !== "undefined" ? Number(localStorage.getItem("ow.sidebar.w") || 252) : 252,
+  setSidebarWidth: (w) => {
+    const clamped = Math.max(200, Math.min(420, Math.round(w)));
+    if (typeof window !== "undefined") localStorage.setItem("ow.sidebar.w", String(clamped));
+    set({ sidebarWidth: clamped });
+  },
 
   threads: initial.threads,
   currentThreadId: initial.currentThreadId,

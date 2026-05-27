@@ -35,6 +35,12 @@ _9 pages._
 ## architecture
 - [[rag-pipeline]] — RAG Pipeline
 
+## assistant
+- [[memory]] — Memory
+
+## conversation
+- [[memory]] — Memory
+
 ## curated wiki
 - [[about-mnemosyne]] — About Mnemosyne
 

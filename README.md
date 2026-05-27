@@ -22,19 +22,21 @@ Inspired by Andrej Karpathy's "LLM Wiki" pattern and the recall surfaces of [Qyn
 
 ## Screenshots
 
-| Chat (streaming RAG with citations) | Wiki (interlinked Markdown pages) |
+Editorial dark theme — Cormorant Garamond display serif, Inter Tight body, JetBrains Mono labels. Violet primary (matches the logo), warm-cream foreground, hairline 0.5 px borders, star-grid sidebar, glass cards, mono breadcrumb topbar with a ⌘K search trigger.
+
+| Chat — streaming RAG, inline cite chips + boxed cite-tray | Wiki — 3-col reader, [[wikilinks]], pinned pages |
 | --- | --- |
 | ![chat](docs/screenshots/01-chat.png) | ![wiki](docs/screenshots/02-wiki.png) |
 
-| Galaxy (3D force graph of links) | Files (sandboxed desktop ingestion) |
+| Galaxy — 3D force graph of all [[links]] | Files — sandboxed root chips + one-click ingest |
 | --- | --- |
 | ![graph](docs/screenshots/03-graph.png) | ![files](docs/screenshots/04-files.png) |
 
-| Agents (parallel swarm dashboard) | MCP servers (plug in tools) |
+| Agents — swarm + multi-step browser + maintenance | MCP servers — stdio plug-ins |
 | --- | --- |
 | ![agents](docs/screenshots/05-agents.png) | ![mcp](docs/screenshots/06-mcp.png) |
 
-| Settings (live health + introspection) | Command palette (⌘K) |
+| Settings — Health · Self-improving loop · stack | Command palette (⌘K) |
 | --- | --- |
 | ![settings](docs/screenshots/07-settings.png) | ![palette](docs/screenshots/08-palette.png) |
 

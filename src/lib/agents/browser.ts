@@ -1,4 +1,4 @@
-import { chromium, type Browser, type Page } from "playwright";
+import type { Browser, Page } from "playwright";
 import { generateJSON, chatOnce } from "../ollama";
 import type { AgentRunner } from "./types";
 
@@ -82,6 +82,7 @@ export const browserRunner: AgentRunner = async (job, log) => {
   log(`Launching chromium for task: ${input.task}`);
   let browser: Browser | null = null;
   try {
+    const { chromium } = await import("playwright");
     browser = await chromium.launch({ headless: true });
     const ctx = await browser.newContext({ viewport: { width: 1366, height: 850 }, userAgent: "Mozilla/5.0 OwnWiki" });
     const page = await ctx.newPage();

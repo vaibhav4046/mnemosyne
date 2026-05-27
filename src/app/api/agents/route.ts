@@ -6,7 +6,7 @@ import { err } from "@/lib/validate";
 
 export const runtime = "nodejs";
 
-const KINDS: AgentKind[] = ["ingest", "query", "lint", "browser", "file", "mcp"];
+const KINDS: AgentKind[] = ["ingest", "query", "lint", "browser", "file", "mcp", "enrich", "synthesize"];
 
 export async function GET() {
   bootstrapAgents();

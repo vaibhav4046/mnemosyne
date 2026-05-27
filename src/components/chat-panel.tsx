@@ -207,11 +207,11 @@ export function ChatPanel() {
             </div>
             <h2 className="text-xl font-semibold mb-2">Ask your knowledge.</h2>
             <p className="text-[var(--text-dim)] text-sm max-w-md mx-auto leading-relaxed">
-              Mnemosyne retrieves from your local wiki and embedded source chunks, then streams an answer from your local Ollama model.
+              Own Wiki retrieves from your local wiki and embedded source chunks, then streams an answer from your local Ollama model.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-lg mx-auto mt-7">
               {[
-                "What is Mnemosyne?",
+                "What is Own Wiki?",
                 "Summarise the Karpathy LLM wiki pattern.",
                 "Why Ollama instead of an API?",
                 "How does the RAG pipeline work?",

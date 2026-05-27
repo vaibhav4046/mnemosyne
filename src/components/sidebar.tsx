@@ -36,12 +36,12 @@ export function Sidebar() {
     >
       <div className="px-4 py-4 flex items-center gap-2.5 border-b border-[var(--border)]">
         <div className="w-9 h-9 rounded-lg overflow-hidden shadow-lg shadow-[var(--accent)]/30 relative">
-          <Image src="/logo.svg" alt="Mnemosyne logo" width={36} height={36} priority />
+          <Image src="/logo.svg" alt="Own Wiki logo" width={36} height={36} priority />
         </div>
         <div>
-          <div className="font-semibold text-[15px] leading-tight tracking-tight">Mnemosyne</div>
+          <div className="font-semibold text-[15px] leading-tight tracking-tight">Own Wiki</div>
           <div className="text-[10px] text-[var(--text-faint)] uppercase tracking-wider">
-            Knowledge OS
+            Personal Knowledge OS
           </div>
         </div>
       </div>

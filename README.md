@@ -1,11 +1,11 @@
 <div align="center">
-  <img src="public/logo.svg" width="80" alt="Mnemosyne logo" />
-  <h1>Mnemosyne</h1>
-  <p><strong>A local-first personal knowledge OS — your own Wikipedia, curated by a local LLM.</strong></p>
+  <img src="public/logo.svg" width="80" alt="Own Wiki logo" />
+  <h1>Own Wiki</h1>
+  <p><strong>A local-first self-improving AI memory wiki — your own Wikipedia, curated by a local LLM, packaged as a Windows .exe.</strong></p>
   <p>
     <img alt="next" src="https://img.shields.io/badge/Next.js-15-black?logo=nextdotjs" />
     <img alt="react" src="https://img.shields.io/badge/React-19-149eca?logo=react" />
-    <img alt="tailwind" src="https://img.shields.io/badge/Tailwind-4-38bdf8?logo=tailwindcss" />
+    <img alt="electron" src="https://img.shields.io/badge/Electron-42-47848f?logo=electron" />
     <img alt="ollama" src="https://img.shields.io/badge/Ollama-local-8b5cf6" />
     <img alt="qa" src="https://img.shields.io/badge/QA-27%2F27%20pass-22d3a8" />
     <img alt="build" src="https://img.shields.io/badge/build-passing-22d3a8" />
@@ -42,14 +42,17 @@ Inspired by Andrej Karpathy's "LLM Wiki" pattern and the recall surfaces of [Qyn
 
 ## Features
 
-- **Streaming RAG chat** — every answer is grounded in cosine-retrieved context from your local vector store; citations rendered inline as chips.
-- **Wiki as code** — `vault/pages/*.md` files with YAML front-matter and `[[wiki-slug]]` cross-references. Open in any editor.
-- **LLM curator** — ingesting a source spawns an agent that summarises, writes/updates 1-4 pages, links them, rebuilds the index, and appends a log entry.
-- **Parallel agent swarm** — runs ingest, lint, file-scan, query, and Playwright-driven browser agents under a single in-process queue with live SSE updates.
-- **3D Galaxy** — every `[[link]]` becomes an edge in a `react-force-graph-3d` scene; nodes are colour-coded by tag, click jumps to the page.
-- **Sandboxed desktop ingest** — a path-jailed filesystem layer exposes your Desktop / Documents / Downloads as roots; one click sends a file through `pdf-parse` / `mammoth` and into the wiki.
+- **Self-improving loop** — toggle on; a server-side daemon ticks every 90s and either enriches the sparsest wiki page or runs a lint pass, growing the memory unattended.
+- **Multi-step browser agent (Claude-Cowork-style)** — give it a natural-language task and a start URL; an LLM planner loop iterates `navigate / click / fill / scroll / extract` up to 15 steps until it returns a thorough answer with citations.
+- **Swarm intelligence with synthesis** — `launch swarm` fans out 3 parallel browser agents on different angles of a topic + a lint pass; when all complete, a `synthesize` agent fuses the findings into a single wiki page with cross-references back to every contributing agent.
+- **Streaming RAG chat** — every answer is grounded in cosine-retrieved context from your local vector store; citations rendered inline as chips; `[[wiki-slug]]` rendered as clickable pills.
+- **Wiki as code** — `vault/pages/*.md` files with YAML front-matter. Pages are dense (3-5 sections, ## See also, ## Sources), properly spaced, and richly cross-linked. Open in any editor.
+- **LLM curator** — ingest spawns an agent that produces 4-8 detailed pages with structured sections, then reuses existing slugs as cross-references.
+- **3D Galaxy** — every `[[link]]` becomes an edge in a `react-force-graph-3d` scene; nodes colour-coded by tag, click jumps to the page.
+- **Sandboxed desktop ingest** — path-jailed FS layer exposes Desktop / Documents / Downloads / vault as roots; one click sends a file through `pdf-parse` / `mammoth` and into the wiki.
 - **MCP client** — connect any stdio MCP server (filesystem, fetch, custom) and expose its tools to the agents.
-- **Local-first by default** — Ollama runs at `127.0.0.1:11434`; no keys, no telemetry, no cloud.
+- **Local-first by default** — Ollama at `127.0.0.1:11434`; no keys, no telemetry, no cloud.
+- **Windows .exe** — packaged via Electron + electron-builder. The .exe boots the Next.js standalone server on `127.0.0.1:3789` and opens a native window.
 
 ---
 
@@ -154,13 +157,23 @@ Cross-references use `[[slug]]` and become edges in the galaxy.
   ollama pull nomic-embed-text
   ```
 
-### Start
+### Run as a web app
 
 ```bash
 npm install
 npx playwright install chromium     # for the browser agent
 npm run dev                          # http://localhost:3500
 ```
+
+### Run as a Windows .exe
+
+```bash
+npm install
+npx playwright install chromium
+npm run build:exe                    # produces dist-electron/OwnWiki-1.0.0-portable.exe
+```
+
+Double-click the produced `.exe` — Electron boots the Next.js standalone server in-process and opens a native window. No installation required; the binary is self-contained.
 
 Open `http://localhost:3500`. The status bar should read **ollama live · llama3.2:3b · nomic-embed-text**.
 
@@ -235,6 +248,18 @@ node scripts/brutal-qa.mjs
 # === 27 pass / 0 fail / 27 total ===
 ```
 
+## Agents
+
+| Kind | Purpose | Output |
+| --- | --- | --- |
+| `ingest` | Embed + curate a source into 4-8 dense wiki pages. | wiki pages + vectors |
+| `enrich` | Expand the sparsest page using related context + add cross-links. | rewritten page |
+| `lint` | Sweep for contradictions, stale claims, orphans, suggest links. | structured report |
+| `browser` | Multi-step browser loop: navigate / click / fill / scroll / extract / done. | answer + screenshot + trace |
+| `query` | One-shot RAG answer. | answer + citations |
+| `file` | Scan a sandboxed dir and ingest matching files. | per-file ingest results |
+| `synthesize` | Read N completed jobs and fuse them into one wiki page. | new wiki page |
+
 ## Roadmap
 
 - swap JSON vector store for `sqlite-vec` once Windows build pipeline is sorted
@@ -243,6 +268,7 @@ node scripts/brutal-qa.mjs
 - inline RAG sources panel on every page
 - per-agent permission scopes for the MCP layer
 - tool-call surfaces for connected MCP servers
+- code-signed `.exe` + auto-updater channel via electron-builder
 
 ---
 

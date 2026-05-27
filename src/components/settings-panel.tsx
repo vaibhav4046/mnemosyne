@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useStore } from "@/store";
-import { Settings, Brain, Database, Folder, Sparkles, RefreshCcw, Activity, Heart, Loader2 } from "lucide-react";
+import { Settings, Brain, Database, Folder, Sparkles, RefreshCcw, Activity, Heart, Loader2, Zap } from "lucide-react";
 
 type ModelInfo = {
   host: string;
@@ -14,19 +14,38 @@ type ModelInfo = {
 };
 
 type Health = { ok: boolean; checks: Record<string, { ok: boolean; detail?: string }>; uptimeSec: number };
+type AutoImprove = { enabled: boolean; intervalSec: number; lastTick: string | null; lastAction: string | null; ticks: number };
 
 export function SettingsPanel() {
   const toast = useStore((s) => s.toast);
   const [info, setInfo] = useState<ModelInfo | null>(null);
   const [health, setHealth] = useState<Health | null>(null);
+  const [auto, setAuto] = useState<AutoImprove | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   async function load() {
     try {
-      const [r1, r2] = await Promise.all([fetch("/api/models"), fetch("/api/health")]);
+      const [r1, r2, r3] = await Promise.all([fetch("/api/models"), fetch("/api/health"), fetch("/api/auto-improve")]);
       setInfo(await r1.json());
       setHealth(await r2.json());
+      setAuto(await r3.json());
     } catch {}
+  }
+
+  async function toggleAuto() {
+    setBusy("auto");
+    try {
+      const r = await fetch("/api/auto-improve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !auto?.enabled, intervalSec: auto?.intervalSec || 90 }),
+      });
+      const d = await r.json();
+      setAuto(d);
+      toast({ kind: "success", msg: d.enabled ? `Self-improving every ${d.intervalSec}s` : "Self-improving paused" });
+    } finally {
+      setBusy(null);
+    }
   }
 
   useEffect(() => {
@@ -83,6 +102,23 @@ export function SettingsPanel() {
           ) : (
             <Row label="Status" value="checking…" />
           )}
+        </Section>
+
+        <Section
+          title="Self-improving loop"
+          icon={<Zap size={14} />}
+          action={
+            <button onClick={toggleAuto} disabled={busy === "auto"} className={`btn-ghost btn text-[11px] ${auto?.enabled ? "text-[var(--green)]" : "text-[var(--text-dim)]"}`}>
+              {busy === "auto" ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} />}
+              {auto?.enabled ? "ON — pause" : "OFF — enable"}
+            </button>
+          }
+        >
+          <Row label="Status" value={auto?.enabled ? "ENABLED" : "paused"} valueClass={auto?.enabled ? "text-[var(--green)]" : "text-[var(--text-dim)]"} />
+          <Row label="Interval" value={`${auto?.intervalSec ?? 90}s`} />
+          <Row label="Ticks fired" value={String(auto?.ticks ?? 0)} />
+          <Row label="Last tick" value={auto?.lastTick?.slice(11, 19) ?? "—"} />
+          <Row label="Last action" value={auto?.lastAction ?? "—"} />
         </Section>
 
         <Section title="Ollama" icon={<Brain size={14} />}>

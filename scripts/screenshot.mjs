@@ -25,19 +25,19 @@ async function go() {
     await page.screenshot({ path: path.join(OUT, `${name}.png`), fullPage: false });
   }
 
-  // 01 — chat with response
+  // 01 — chat
   await clickNav("Chat");
-  await page.fill("textarea", "What is Mnemosyne and why local-first?");
+  await page.fill("textarea", "What is Own Wiki and how does the self-improving loop work?");
   await page.waitForTimeout(400);
   await page.locator('button[aria-label="send message"]').click();
-  console.log("waiting for chat stream…");
-  await page.waitForTimeout(45000);
+  console.log("waiting for chat…");
+  await page.waitForTimeout(40000);
   await snap("01-chat");
 
-  // 02 — wiki with Karpathy page selected
+  // 02 — wiki with Own Wiki page selected
   await clickNav("Wiki");
   await page.waitForTimeout(2200);
-  await page.locator('button:has-text("Karpathy LLM Wiki")').first().click().catch(() => {});
+  await page.locator('button:has-text("Own Wiki")').first().click().catch(() => {});
   await page.waitForTimeout(1500);
   await snap("02-wiki");
 
@@ -51,25 +51,22 @@ async function go() {
   await page.waitForTimeout(2000);
   await snap("04-files");
 
-  // 05 — agents with a job running
+  // 05 — agents with browser task visible
   await clickNav("Agents");
-  await page.waitForTimeout(1200);
-  await page.locator('button:has-text("wiki lint pass")').first().click().catch(() => {});
-  console.log("waiting for lint…");
-  await page.waitForTimeout(25000);
+  await page.waitForTimeout(1500);
   await snap("05-agents");
 
-  // 06 — MCP with seeded configs
+  // 06 — MCP
   await clickNav("MCP");
   await page.waitForTimeout(1800);
   await snap("06-mcp");
 
-  // 07 — settings (with health populated)
+  // 07 — settings with auto-improve section
   await clickNav("Settings");
   await page.waitForTimeout(2500);
   await snap("07-settings");
 
-  // 08 — command palette open
+  // 08 — command palette
   await page.locator('button[aria-label="Open command palette"]').click();
   await page.waitForTimeout(700);
   await snap("08-palette");

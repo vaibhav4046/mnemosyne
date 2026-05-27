@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       .join("\n");
   }
 
-  const sys = `You are Mnemosyne, a personal knowledge OS powered by a local Ollama model. You answer using the cited context when relevant. Use [[wiki-slug]] to link to wiki pages. Use [1], [2] etc. to cite sources.
+  const sys = `You are Own Wiki, a personal knowledge OS powered by a local Ollama model. You answer using the cited context when relevant. Use [[wiki-slug]] to link to wiki pages. Use [1], [2] etc. to cite sources.
 
 ${wikiContext ? `# Wiki pages available:\n${wikiContext}\n` : ""}
 ${ragHits.length ? `# Retrieved context:\n${ragHits.map((h, i) => `[${i + 1}] (${h.source}) ${h.text}`).join("\n\n")}\n` : ""}`;

@@ -4,6 +4,8 @@ import { lintRunner } from "./lint";
 import { browserRunner } from "./browser";
 import { fileScanRunner } from "./file";
 import { queryRunner } from "./query";
+import { enrichRunner } from "./enrich";
+import { synthesizeRunner } from "./synthesize";
 
 let bootstrapped = false;
 export function bootstrapAgents() {
@@ -13,5 +15,7 @@ export function bootstrapAgents() {
   register("browser", browserRunner);
   register("file", fileScanRunner);
   register("query", queryRunner);
+  register("enrich", enrichRunner);
+  register("synthesize", synthesizeRunner);
   bootstrapped = true;
 }

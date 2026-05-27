@@ -23,7 +23,7 @@ export async function ensureVault(): Promise<void> {
       file: path.join(VAULT_DIR, "CLAUDE.md"),
       content: `# Wiki Schema
 
-This is the Mnemosyne personal knowledge vault. The LLM curates these pages.
+This is the Own Wiki personal knowledge vault. The LLM curates these pages.
 
 ## Conventions
 - Every page lives in \`pages/<slug>.md\`.

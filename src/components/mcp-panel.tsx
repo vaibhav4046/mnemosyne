@@ -139,7 +139,7 @@ export function McpPanel() {
             <p className="mb-2">No MCP servers configured.</p>
             <p className="text-[12px]">
               Add a stdio MCP server (e.g.{" "}
-              <code className="text-[var(--accent-3)]">@modelcontextprotocol/server-filesystem</code>) to expose its tools to Mnemosyne.
+              <code className="text-[var(--accent-3)]">@modelcontextprotocol/server-filesystem</code>) to expose its tools to Own Wiki.
             </p>
           </div>
         ) : (

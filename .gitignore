@@ -41,6 +41,10 @@ next-env.d.ts
 /data/vectors.json
 /data/mcp.runtime.json
 
+# electron build output (binary too large for git — use GitHub Releases)
+/dist-electron/
+/release/
+
 # playwright
 /test-results/
 /playwright-report/

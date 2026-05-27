@@ -57,11 +57,15 @@
     "compression": "normal",
     "files": [
       "electron/**/*",
-      "public/**/*",
-      ".next/standalone/**/*",
-      ".next/static/**/*",
-      "vault/**/*",
-      "data/**/*"
+      "package.json",
+      "!**/.next/**",
+      "!**/dist-electron/**",
+      "!**/_inspiration/**",
+      "!**/docs/**",
+      "!**/scripts/**",
+      "!**/test-export.*",
+      "!**/*.log",
+      "!**/home.html"
     ],
     "extraResources": [
       {

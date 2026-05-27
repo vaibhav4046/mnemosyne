@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useStore } from "@/store";
-import { BookOpen, Plus, Save, RefreshCcw, Tag, Search, X, Trash2, Download, Clock, FileText, Link2 } from "lucide-react";
+import { BookOpen, Plus, Save, RefreshCcw, Tag, Search, X, Trash2, Download, Clock, FileText, Link2, ChevronDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { WikiPage } from "@/lib/wiki";
@@ -21,6 +21,16 @@ export function WikiPanel() {
   const [editBody, setEditBody] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [q, setQ] = useState("");
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) setExportOpen(false);
+    }
+    if (exportOpen) document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [exportOpen]);
 
   const refresh = useCallback(async () => {
     try {
@@ -207,23 +217,38 @@ export function WikiPanel() {
               </div>
               <div className="flex gap-2 shrink-0 items-center">
                 {!editing && (
-                  <div className="flex gap-1 items-center mr-2 pr-2" style={{ borderRight: "0.5px solid var(--border)" }}>
-                    <Download size={11} style={{ color: "var(--fg-3)" }} />
-                    {(["md", "pdf", "docx", "csv", "html"] as const).map((fmt) => (
-                      <a
-                        key={fmt}
-                        href={`/api/export/${page.slug}?format=${fmt}`}
-                        className="btn-ghost btn text-[10.5px] mono tracking-[0.1em] uppercase px-2 py-1"
-                        title={`Download .${fmt}`}
-                      >
-                        {fmt}
-                      </a>
-                    ))}
+                  <div ref={exportRef} className="relative">
+                    <button onClick={() => setExportOpen((o) => !o)} className="btn btn-secondary text-[12px]" aria-haspopup="menu" aria-expanded={exportOpen}>
+                      <Download size={12} /> export <ChevronDown size={11} />
+                    </button>
+                    {exportOpen && (
+                      <div className="menu" role="menu">
+                        {([
+                          { fmt: "md", label: "Markdown", note: ".md" },
+                          { fmt: "pdf", label: "PDF", note: ".pdf" },
+                          { fmt: "docx", label: "Word", note: ".docx" },
+                          { fmt: "csv", label: "Spreadsheet", note: ".csv" },
+                          { fmt: "html", label: "HTML", note: ".html" },
+                        ] as const).map((f) => (
+                          <a
+                            key={f.fmt}
+                            href={`/api/export/${page.slug}?format=${f.fmt}`}
+                            onClick={() => setExportOpen(false)}
+                            className="menu-item"
+                            role="menuitem"
+                          >
+                            <Download size={11} />
+                            <span>{f.label}</span>
+                            <span className="kind">{f.note}</span>
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
                 {editing ? (
                   <>
-                    <button onClick={() => { setEditing(false); setEditBody(page.body); setEditTitle(page.title); }} className="btn">
+                    <button onClick={() => { setEditing(false); setEditBody(page.body); setEditTitle(page.title); }} className="btn btn-secondary">
                       <X size={13} /> cancel
                     </button>
                     <button onClick={save} className="btn btn-primary"><Save size={13} /> save</button>
@@ -233,7 +258,7 @@ export function WikiPanel() {
                     <button onClick={deleteCurrent} className="btn-ghost btn" title="delete page" aria-label="delete page">
                       <Trash2 size={13} />
                     </button>
-                    <button onClick={() => setEditing(true)} className="btn">edit</button>
+                    <button onClick={() => setEditing(true)} className="btn btn-secondary">edit</button>
                   </>
                 )}
               </div>

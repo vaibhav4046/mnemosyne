@@ -474,23 +474,23 @@ export function ChatPanel() {
             onChange={(e) => setInput(e.target.value)}
             onPaste={onPaste}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-            placeholder={uploading ? "Uploading…" : "Ask the librarian… ([[wikilinks]] auto-suggest · paste or drop a PDF/DOCX)"}
+            placeholder={uploading ? "Uploading…" : "Ask your vault — drop or paste a PDF, DOCX, or image to attach"}
             rows={1}
             aria-label="Chat input"
             className="w-full bg-transparent border-0 outline-none resize-none text-[15px] leading-[1.5] min-h-[22px] max-h-[200px]"
             style={{ color: "var(--fg-1)" }}
           />
-          <div className="flex items-center gap-[6px] pt-[8px] mt-[8px] flex-wrap" style={{ borderTop: "0.5px solid var(--border-2)" }}>
-            <button onClick={() => setRagOn(!ragOn)} className={`chip ${ragOn ? "solid" : ""}`} title="toggle RAG retrieval">
+          <div className="flex items-center gap-[6px] pt-[10px] mt-[10px] flex-wrap" style={{ borderTop: "0.5px solid var(--border-2)" }}>
+            <button onClick={() => setRagOn(!ragOn)} className={`chip ${ragOn ? "solid" : ""}`} title="retrieval-augmented generation — pull cited context from vector store">
               <LinkIcon size={11} /> RAG
             </button>
-            <button onClick={() => setMemoryOn(!memoryOn)} className={`chip ${memoryOn ? "solid" : ""}`} title="extract facts to memory after each answer">
+            <button onClick={() => setMemoryOn(!memoryOn)} className={`chip ${memoryOn ? "solid" : ""}`} title="extract atomic facts to vault/pages/memory.md after each answer">
               <Globe size={11} /> Memory
             </button>
-            <button onClick={() => fileRef.current?.click()} className="chip" title="attach file (or paste / drop)">
+            <button onClick={() => fileRef.current?.click()} className="chip" title="attach file — or paste / drag onto the composer">
               <Upload size={11} /> Attach
             </button>
-            <button onClick={() => { newThread(); clearCurrent(); }} className="chip" title="start fresh thread">
+            <button onClick={() => { newThread(); clearCurrent(); }} className="chip" title="start a fresh thread (current saved to sidebar)">
               <History size={11} /> New thread
             </button>
             <div className="ml-auto flex items-center gap-3">

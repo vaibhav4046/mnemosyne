@@ -29,7 +29,7 @@ export function CommandPalette() {
   const setView = useStore((s) => s.setView);
   const openModal = useStore((s) => s.openModal);
   const toast = useStore((s) => s.toast);
-  const clearChats = useStore((s) => s.clearChats);
+  const clearCurrent = useStore((s) => s.clearCurrent);
   const [q, setQ] = useState("");
   const [idx, setIdx] = useState(0);
 
@@ -122,13 +122,13 @@ export function CommandPalette() {
         hint: "chat",
         icon: Trash2,
         run: () => {
-          clearChats();
+          clearCurrent();
           toast({ kind: "success", msg: "Chat cleared" });
         },
       },
     ];
     return [...goto, ...cmds];
-  }, [setView, openModal, toast, clearChats]);
+  }, [setView, openModal, toast, clearCurrent]);
 
   const filtered = useMemo(() => {
     if (!q) return actions;

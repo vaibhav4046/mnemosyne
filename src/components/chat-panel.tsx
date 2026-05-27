@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { useStore } from "@/store";
-import { Send, Link as LinkIcon, Globe, Upload, History, Square, Copy, RefreshCcw, Check, Quote } from "lucide-react";
+import { useStore, useCurrentThread } from "@/store";
+import { Send, Link as LinkIcon, Globe, Upload, History, Square, Copy, RefreshCcw, Check, Paperclip, X, Download } from "lucide-react";
 import { nanoid } from "nanoid";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -14,10 +14,15 @@ const SUGGESTIONS = [
   { kind: "rag", q: "What's the difference between RAG retrieval and the wiki layer here?" },
 ];
 
+type Attachment = { name: string; kind: string; chars: number; text: string };
+
 export function ChatPanel() {
-  const chats = useStore((s) => s.chats);
-  const appendChat = useStore((s) => s.appendChat);
-  const updateChat = useStore((s) => s.updateChat);
+  const thread = useCurrentThread();
+  const appendToCurrent = useStore((s) => s.appendToCurrent);
+  const updateInCurrent = useStore((s) => s.updateInCurrent);
+  const clearCurrent = useStore((s) => s.clearCurrent);
+  const newThread = useStore((s) => s.newThread);
+  const renameThread = useStore((s) => s.renameThread);
   const setView = useStore((s) => s.setView);
   const setSelectedSlug = useStore((s) => s.setSelectedSlug);
   const toast = useStore((s) => s.toast);
@@ -26,15 +31,21 @@ export function ChatPanel() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [ragOn, setRagOn] = useState(true);
-  const [browseOn, setBrowseOn] = useState(false);
+  const [memoryOn, setMemoryOn] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  const chats = thread?.messages ?? [];
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [chats]);
+  }, [chats.length]);
 
   useEffect(() => {
     const ta = taRef.current;
@@ -49,15 +60,98 @@ export function ChatPanel() {
     setBusy(false);
   }
 
+  async function uploadFile(file: File) {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const r = await fetch("/api/upload", { method: "POST", body: fd });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || "upload failed");
+      setAttachments((prev) => [...prev, { name: d.name, kind: d.kind, chars: d.chars, text: d.text }]);
+      toast({ kind: "success", msg: `Attached ${d.name} (${d.chars.toLocaleString()} chars)` });
+    } catch (e) {
+      toast({ kind: "error", msg: e instanceof Error ? e.message : "upload failed" });
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function onPaste(e: React.ClipboardEvent) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.kind === "file") {
+        e.preventDefault();
+        const f = it.getAsFile();
+        if (f) await uploadFile(f);
+      }
+    }
+  }
+
+  async function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    for (const f of files) await uploadFile(f);
+  }
+
+  async function maybeTitleThread(firstUserMsg: string) {
+    if (!thread) return;
+    if (thread.title && thread.title !== "New thread") return;
+    try {
+      const r = await fetch("/api/thread/title", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firstMessage: firstUserMsg }),
+      });
+      const d = await r.json();
+      if (r.ok && d.title) renameThread(thread.id, d.title);
+    } catch {}
+  }
+
+  async function extractMemory(userMsg: string, assistantMsg: string) {
+    if (!memoryOn) return;
+    try {
+      const r = await fetch("/api/memory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userMsg, assistantMsg, threadTitle: thread?.title || "" }),
+      });
+      const d = await r.json();
+      if (r.ok && d.added > 0) {
+        toast({ kind: "info", msg: `Memory +${d.added} facts → [[memory]]`, ttl: 3500 });
+      }
+    } catch {}
+  }
+
   async function send(promptText?: string) {
-    const text = promptText ?? input;
-    if (!text.trim() || busy) return;
-    const userTurn = { id: nanoid(6), role: "user" as const, content: text };
+    let text = (promptText ?? input).trim();
+    if (!text && attachments.length === 0) return;
+    if (busy) return;
+
+    if (attachments.length) {
+      const ctx = attachments
+        .map((a) => `<file name="${a.name}" kind="${a.kind}" chars="${a.chars}">\n${a.text.slice(0, 30_000)}\n</file>`)
+        .join("\n\n");
+      text = `${ctx}\n\n${text || "Summarise the attached file(s)."}`;
+    }
+
+    const userTurn = { id: nanoid(6), role: "user" as const, content: text, attachments: attachments.length ? attachments.map((a) => ({ name: a.name, kind: a.kind, chars: a.chars })) : undefined };
     const asstId = nanoid(6);
-    appendChat(userTurn);
-    appendChat({ id: asstId, role: "assistant", content: "", streaming: true });
+    appendToCurrent(userTurn);
+    appendToCurrent({ id: asstId, role: "assistant", content: "", streaming: true });
+    const sentAttachments = attachments;
+    const sentUserText = text;
     if (!promptText) setInput("");
+    setAttachments([]);
     setBusy(true);
+
+    if (chats.filter((c) => c.role === "user").length === 0) {
+      maybeTitleThread(promptText ?? input);
+    }
+
     const ac = new AbortController();
     abortRef.current = ac;
     let acc = "";
@@ -89,24 +183,24 @@ export function ChatPanel() {
           if (!line.startsWith("data: ")) continue;
           try {
             const ev = JSON.parse(line.slice(6));
-            if (ev.type === "token") {
-              acc += ev.text;
-              updateChat(asstId, { content: acc });
-            } else if (ev.type === "citations") {
-              updateChat(asstId, { citations: ev.citations });
-            } else if (ev.type === "error") {
-              updateChat(asstId, { content: acc, error: ev.error, streaming: false });
-            }
+            if (ev.type === "token") { acc += ev.text; updateInCurrent(asstId, { content: acc }); }
+            else if (ev.type === "citations") updateInCurrent(asstId, { citations: ev.citations });
+            else if (ev.type === "error") updateInCurrent(asstId, { content: acc, error: ev.error, streaming: false });
           } catch {}
         }
       }
-      updateChat(asstId, { streaming: false });
+      updateInCurrent(asstId, { streaming: false });
+      if (acc) {
+        // sentUserText may contain attached file blob — pass cleaner version for memory
+        const cleanUser = sentAttachments.length ? sentUserText.replace(/<file[^>]*>[\s\S]*?<\/file>/g, "[attached files]") : sentUserText;
+        extractMemory(cleanUser, acc);
+      }
     } catch (e) {
       if ((e as Error).name === "AbortError") {
-        updateChat(asstId, { content: acc + " _(stopped)_", streaming: false });
+        updateInCurrent(asstId, { content: acc + " _(stopped)_", streaming: false });
       } else {
         const msg = e instanceof Error ? e.message : String(e);
-        updateChat(asstId, { content: acc, error: msg, streaming: false });
+        updateInCurrent(asstId, { content: acc, error: msg, streaming: false });
         toast({ kind: "error", msg: `Chat failed: ${msg}` });
       }
     }
@@ -117,7 +211,7 @@ export function ChatPanel() {
   async function regenerate(id: string) {
     const idx = chats.findIndex((c) => c.id === id);
     if (idx < 1) return;
-    updateChat(id, { content: "", streaming: true, error: undefined });
+    updateInCurrent(id, { content: "", streaming: true, error: undefined });
     setBusy(true);
     const ac = new AbortController();
     abortRef.current = ac;
@@ -146,14 +240,14 @@ export function ChatPanel() {
           if (!line.startsWith("data: ")) continue;
           try {
             const ev = JSON.parse(line.slice(6));
-            if (ev.type === "token") { acc += ev.text; updateChat(id, { content: acc }); }
-            else if (ev.type === "citations") updateChat(id, { citations: ev.citations });
+            if (ev.type === "token") { acc += ev.text; updateInCurrent(id, { content: acc }); }
+            else if (ev.type === "citations") updateInCurrent(id, { citations: ev.citations });
           } catch {}
         }
       }
-      updateChat(id, { streaming: false });
+      updateInCurrent(id, { streaming: false });
     } catch (e) {
-      updateChat(id, { error: e instanceof Error ? e.message : String(e), streaming: false });
+      updateInCurrent(id, { error: e instanceof Error ? e.message : String(e), streaming: false });
     }
     setBusy(false);
   }
@@ -165,6 +259,25 @@ export function ChatPanel() {
     });
   }
 
+  function exportThread(format: "md" | "json") {
+    if (!thread) return;
+    if (format === "json") {
+      const blob = new Blob([JSON.stringify(thread, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `${thread.title.replace(/[^\w]+/g, "-")}.json`; a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      const lines = [`# ${thread.title}`, ``, `_${thread.messages.length} turns · started ${thread.createdAt.slice(0, 10)}_`, ``];
+      for (const m of thread.messages) lines.push(`## ${m.role}`, ``, m.content, ``);
+      const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `${thread.title.replace(/[^\w]+/g, "-")}.md`; a.click();
+      URL.revokeObjectURL(url);
+    }
+  }
+
   function renderContent(content: string, citations?: { source: string; title: string; score: number }[]) {
     const parts: React.ReactNode[] = [];
     const re = /\[\[([^\]]+)\]\]|\[(\d+)\]/g;
@@ -174,24 +287,11 @@ export function ChatPanel() {
       if (m.index > last) parts.push(content.slice(last, m.index));
       if (m[1]) {
         const slug = m[1];
-        parts.push(
-          <span
-            key={`l-${m.index}-${parts.length}`}
-            className="wikilink"
-            onClick={() => { setSelectedSlug(slug); setView("wiki"); }}
-          >
-            {slug}
-          </span>,
-        );
+        parts.push(<span key={`l-${m.index}-${parts.length}`} className="wikilink" onClick={() => { setSelectedSlug(slug); setView("wiki"); }}>{slug}</span>);
       } else if (m[2]) {
         const n = parseInt(m[2], 10);
         const c = citations?.[n - 1];
-        parts.push(
-          <span key={`c-${m.index}-${parts.length}`} className="cite-chip" title={c?.source || ""}>
-            <span className="num">{n}</span>
-            {c?.title?.slice(0, 26) || `cite ${n}`}
-          </span>,
-        );
+        parts.push(<span key={`c-${m.index}-${parts.length}`} className="cite-chip" title={c?.source || ""}><span className="num">{n}</span>{c?.title?.slice(0, 26) || `cite ${n}`}</span>);
       }
       last = m.index + m[0].length;
     }
@@ -199,11 +299,42 @@ export function ChatPanel() {
     return parts;
   }
 
-  const empty = chats.length === 0;
+  const empty = !thread || chats.length === 0;
 
   return (
-    <div className="grid grid-rows-[1fr_auto] h-full relative z-10">
-      <div ref={scrollRef} className="overflow-y-auto scroll-thin pt-[56px] pb-[24px]">
+    <div
+      className="grid grid-rows-[1fr_auto] h-full relative z-10"
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={onDrop}
+    >
+      {dragOver && (
+        <div className="absolute inset-0 z-30 grid place-items-center pointer-events-none" style={{ background: "rgba(168,85,247,0.08)", border: "2px dashed var(--violet)" }}>
+          <div className="mono text-[14px] tracking-[0.16em] uppercase" style={{ color: "var(--violet-2)" }}>
+            Drop file to attach
+          </div>
+        </div>
+      )}
+
+      {thread && !empty && (
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-[32px] py-[12px] z-20" style={{ background: "rgba(8,9,15,0.6)", backdropFilter: "blur(6px)", borderBottom: "0.5px solid var(--border-2)" }}>
+          <div className="flex items-center gap-3">
+            <span className="serif text-[18px]" style={{ color: "var(--fg-1)" }}>{thread.title}</span>
+            <span className="mono text-[10px] tracking-[0.14em] uppercase" style={{ color: "var(--fg-3)" }}>{thread.messages.length} turns</span>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => exportThread("md")} className="btn btn-ghost text-[11px]" title="Export as Markdown">
+              <Download size={11} /> .md
+            </button>
+            <button onClick={() => exportThread("json")} className="btn btn-ghost text-[11px]" title="Export as JSON">
+              <Download size={11} /> .json
+            </button>
+            <button onClick={() => newThread()} className="btn btn-secondary text-[11px]">+ new thread</button>
+          </div>
+        </div>
+      )}
+
+      <div ref={scrollRef} className="overflow-y-auto scroll-thin pt-[80px] pb-[24px]">
         {empty ? (
           <div className="grid place-items-center h-full text-center p-6">
             <div className="max-w-[560px]">
@@ -214,7 +345,7 @@ export function ChatPanel() {
                 Ask your <span className="serif-italic" style={{ color: "var(--brass)" }}>vault</span>.
               </h1>
               <p style={{ color: "var(--fg-3)", fontSize: 15, maxWidth: 440, margin: "0 auto 36px" }}>
-                Own Wiki reads from your interlinked Markdown pages and indexed chunks on this machine. Citations are clickable and reversible.
+                Paste / drop a file, or just type. Memory updates after every answer.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-[10px] text-left">
                 {SUGGESTIONS.map((s) => (
@@ -248,10 +379,10 @@ export function ChatPanel() {
                   {c.role === "user" ? "YOU" : <Image src="/logo.svg" alt="" width={18} height={18} />}
                 </div>
                 <div className="pt-[4px] min-w-0">
-                  <div className="flex items-center gap-[10px] mb-[8px]">
+                  <div className="flex items-center gap-[10px] mb-[8px] flex-wrap">
                     <span className="text-[13px] font-medium" style={{ color: "var(--fg-1)" }}>{c.role === "user" ? "You" : "Own Wiki"}</span>
                     <span className="mono text-[11px]" style={{ color: "var(--fg-3)" }}>
-                      {new Date().toTimeString().slice(0, 5)}
+                      {c.t ? new Date(c.t).toTimeString().slice(0, 5) : ""}
                       {c.role === "assistant" && modelInfo?.chatModel ? ` · ${modelInfo.chatModel.replace(/:latest$/, "")}` : ""}
                     </span>
                     {c.streaming && (
@@ -261,6 +392,9 @@ export function ChatPanel() {
                       </span>
                     )}
                     {c.error && <span className="tag" style={{ color: "var(--danger)", borderColor: "rgba(208,106,106,0.4)" }}>error</span>}
+                    {c.attachments && c.attachments.map((a, i) => (
+                      <span key={i} className="chip"><Paperclip size={9} /> {a.name}</span>
+                    ))}
                   </div>
                   <div className="prose-mn">
                     {c.role === "assistant" ? (
@@ -279,7 +413,7 @@ export function ChatPanel() {
                         <p style={{ color: "var(--fg-3)" }}>retrieving…<span className="caret" /></p>
                       )
                     ) : (
-                      <p>{c.content}</p>
+                      <p>{c.attachments?.length ? c.content.replace(/<file[^>]*>[\s\S]*?<\/file>/g, "").trim() || "[attached files]" : c.content}</p>
                     )}
                     {c.streaming && c.content && <span className="caret" />}
                   </div>
@@ -306,10 +440,10 @@ export function ChatPanel() {
                   )}
                   {c.role === "assistant" && !c.streaming && c.content && (
                     <div className="flex gap-[4px] mt-[14px] opacity-50 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => copy(c.id, c.content)} className="flex items-center gap-[6px] px-[8px] py-[4px] rounded-sm mono text-[10px] tracking-[0.1em] uppercase transition-all" style={{ color: "var(--fg-3)" }} onMouseEnter={(e) => { e.currentTarget.style.color = "var(--fg-1)"; e.currentTarget.style.background = "rgba(245,240,228,0.04)"; }} onMouseLeave={(e) => { e.currentTarget.style.color = "var(--fg-3)"; e.currentTarget.style.background = "transparent"; }}>
+                      <button onClick={() => copy(c.id, c.content)} className="flex items-center gap-[6px] px-[8px] py-[4px] rounded-sm mono text-[10px] tracking-[0.1em] uppercase transition-all" style={{ color: "var(--fg-3)" }}>
                         {copiedId === c.id ? <Check size={11} /> : <Copy size={11} />} {copiedId === c.id ? "copied" : "copy"}
                       </button>
-                      <button onClick={() => regenerate(c.id)} className="flex items-center gap-[6px] px-[8px] py-[4px] rounded-sm mono text-[10px] tracking-[0.1em] uppercase transition-all" style={{ color: "var(--fg-3)" }} onMouseEnter={(e) => { e.currentTarget.style.color = "var(--fg-1)"; e.currentTarget.style.background = "rgba(245,240,228,0.04)"; }} onMouseLeave={(e) => { e.currentTarget.style.color = "var(--fg-3)"; e.currentTarget.style.background = "transparent"; }}>
+                      <button onClick={() => regenerate(c.id)} className="flex items-center gap-[6px] px-[8px] py-[4px] rounded-sm mono text-[10px] tracking-[0.1em] uppercase transition-all" style={{ color: "var(--fg-3)" }}>
                         <RefreshCcw size={11} /> regenerate
                       </button>
                     </div>
@@ -323,38 +457,50 @@ export function ChatPanel() {
 
       <div className="px-[32px] pt-[18px] pb-[24px]" style={{ borderTop: "0.5px solid var(--border)", background: "linear-gradient(180deg, transparent, rgba(8,9,15,0.6) 40%)" }}>
         <div className="max-w-[760px] mx-auto p-[14px] rounded-md transition-colors" style={{ background: "var(--navy-2)", border: "0.5px solid var(--border)" }}>
+          {attachments.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-[8px] pb-[8px]" style={{ borderBottom: "0.5px solid var(--border-2)" }}>
+              {attachments.map((a, i) => (
+                <span key={i} className="chip violet">
+                  <Paperclip size={9} /> {a.name} · {a.chars.toLocaleString()} chars
+                  <button onClick={() => setAttachments((p) => p.filter((_, j) => j !== i))} className="ml-1" aria-label="remove"><X size={9} /></button>
+                </span>
+              ))}
+            </div>
+          )}
+          <input ref={fileRef} type="file" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); e.currentTarget.value = ""; }} />
           <textarea
             ref={taRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onPaste={onPaste}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-            placeholder="Ask the librarian… ([[wikilinks]] auto-suggest)"
+            placeholder={uploading ? "Uploading…" : "Ask the librarian… ([[wikilinks]] auto-suggest · paste or drop a PDF/DOCX)"}
             rows={1}
             aria-label="Chat input"
             className="w-full bg-transparent border-0 outline-none resize-none text-[15px] leading-[1.5] min-h-[22px] max-h-[200px]"
             style={{ color: "var(--fg-1)" }}
           />
-          <div className="flex items-center gap-[6px] pt-[8px] mt-[8px]" style={{ borderTop: "0.5px solid var(--border-2)" }}>
+          <div className="flex items-center gap-[6px] pt-[8px] mt-[8px] flex-wrap" style={{ borderTop: "0.5px solid var(--border-2)" }}>
             <button onClick={() => setRagOn(!ragOn)} className={`chip ${ragOn ? "solid" : ""}`} title="toggle RAG retrieval">
               <LinkIcon size={11} /> RAG
             </button>
-            <button onClick={() => setBrowseOn(!browseOn)} className={`chip ${browseOn ? "solid" : ""}`} title="(coming) attach browser context">
-              <Globe size={11} /> Browse
+            <button onClick={() => setMemoryOn(!memoryOn)} className={`chip ${memoryOn ? "solid" : ""}`} title="extract facts to memory after each answer">
+              <Globe size={11} /> Memory
             </button>
-            <button className="chip" title="(coming) attach file">
+            <button onClick={() => fileRef.current?.click()} className="chip" title="attach file (or paste / drop)">
               <Upload size={11} /> Attach
             </button>
-            <button onClick={() => useStore.getState().clearChats()} className="chip" title="clear thread">
+            <button onClick={() => { newThread(); clearCurrent(); }} className="chip" title="start fresh thread">
               <History size={11} /> New thread
             </button>
             <div className="ml-auto flex items-center gap-3">
-              <span className="mono text-[10px] tracking-[0.06em]" style={{ color: "var(--fg-4)" }}>↵ send · ⇧↵ newline</span>
+              <span className="mono text-[10px] tracking-[0.06em]" style={{ color: "var(--fg-4)" }}>↵ send · ⇧↵ newline · ⌘V paste file</span>
               {busy ? (
                 <button onClick={stop} className="w-8 h-8 rounded-sm grid place-items-center" style={{ background: "var(--danger)", color: "white" }} aria-label="stop">
                   <Square size={14} fill="currentColor" />
                 </button>
               ) : (
-                <button onClick={() => send()} disabled={!input.trim()} className="w-8 h-8 rounded-sm grid place-items-center transition-colors disabled:cursor-not-allowed" style={{ background: input.trim() ? "var(--violet)" : "var(--navy-3)", color: input.trim() ? "white" : "var(--fg-3)" }} aria-label="send message">
+                <button onClick={() => send()} disabled={!input.trim() && attachments.length === 0} className="w-8 h-8 rounded-sm grid place-items-center transition-colors disabled:cursor-not-allowed" style={{ background: (input.trim() || attachments.length) ? "var(--violet)" : "var(--navy-3)", color: (input.trim() || attachments.length) ? "white" : "var(--fg-3)" }} aria-label="send message">
                   <Send size={14} />
                 </button>
               )}

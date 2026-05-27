@@ -1,6 +1,6 @@
 # Index
 
-_8 pages._
+_9 pages._
 
 ## Framework
 - [[next-js-15]] — Next.js 15
@@ -16,10 +16,14 @@ _8 pages._
 - [[karpathy-llm-wiki]] — Karpathy LLM Wiki
 - [[ollama]] — Ollama
 
+## LLM model
+- [[memory]] — Memory
+
 ## Next.js
 - [[next-js-15]] — Next.js 15
 
 ## Ollama
+- [[memory]] — Memory
 - [[ollama]] — Ollama
 
 ## React
@@ -34,16 +38,22 @@ _8 pages._
 ## curated wiki
 - [[about-mnemosyne]] — About Mnemosyne
 
+## memory
+- [[memory]] — Memory
+
 ## meta
 - [[citations]] — Citations
-- [[mnemosyne]] — Mnemosyne
+- [[own-wiki]] — Own Wiki
 - [[wiki-pages]] — Wiki Pages
 
 ## personal knowledge
 - [[about-mnemosyne]] — About Mnemosyne
 
+## port
+- [[memory]] — Memory
+
 ## rag
 - [[rag-pipeline]] — RAG Pipeline
 
 ## system
-- [[mnemosyne]] — Mnemosyne
+- [[own-wiki]] — Own Wiki

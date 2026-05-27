@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useStore } from "@/store";
-import { BookOpen, Plus, Save, RefreshCcw, Tag, Search, X, Trash2 } from "lucide-react";
+import { BookOpen, Plus, Save, RefreshCcw, Tag, Search, X, Trash2, Download } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { WikiPage } from "@/lib/wiki";
@@ -219,7 +219,22 @@ export function WikiPanel() {
                   </div>
                 )}
               </div>
-              <div className="flex gap-2 shrink-0">
+              <div className="flex gap-2 shrink-0 items-center">
+                {!editing && (
+                  <div className="flex gap-1 items-center mr-2 pr-2" style={{ borderRight: "0.5px solid var(--border)" }}>
+                    <Download size={11} style={{ color: "var(--fg-3)" }} />
+                    {(["md", "pdf", "docx", "csv", "html"] as const).map((fmt) => (
+                      <a
+                        key={fmt}
+                        href={`/api/export/${page.slug}?format=${fmt}`}
+                        className="btn-ghost btn text-[10.5px] mono tracking-[0.1em] uppercase px-2 py-1"
+                        title={`Download as .${fmt}`}
+                      >
+                        {fmt}
+                      </a>
+                    ))}
+                  </div>
+                )}
                 {editing ? (
                   <>
                     <button onClick={() => { setEditing(false); setEditBody(page.body); setEditTitle(page.title); }} className="btn">

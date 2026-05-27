@@ -15,6 +15,8 @@ import {
   Brain,
   Database,
   Activity,
+  Plus,
+  Trash2,
 } from "lucide-react";
 
 type NavItem = { id: View; label: string; icon: React.ComponentType<{ size?: number }>; kbd: string };
@@ -39,6 +41,13 @@ export function Sidebar() {
   const setPaletteOpen = useStore((s) => s.setPaletteOpen);
   const modelInfo = useStore((s) => s.modelInfo);
   const setModelInfo = useStore((s) => s.setModelInfo);
+  const threads = useStore((s) => s.threads);
+  const currentThreadId = useStore((s) => s.currentThreadId);
+  const newThread = useStore((s) => s.newThread);
+  const switchThread = useStore((s) => s.switchThread);
+  const deleteThread = useStore((s) => s.deleteThread);
+  const openModal = useStore((s) => s.openModal);
+  const setSelectedSlug = useStore((s) => s.setSelectedSlug);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,15 +111,54 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="px-[14px] pt-[18px] pb-[8px]">
-        <div className="mono text-[10px] tracking-[0.18em] uppercase px-[10px] pb-[10px]" style={{ color: "var(--fg-3)" }}>
+      <div className="px-[14px] pt-[14px] pb-[8px]">
+        <div className="mono text-[10px] tracking-[0.18em] uppercase px-[10px] pb-[8px] flex items-center justify-between" style={{ color: "var(--fg-3)" }}>
+          <span>Threads · {threads.length}</span>
+          <button onClick={() => { newThread(); setView("chat"); }} className="hover:text-white" aria-label="new thread" title="new thread">
+            <Plus size={11} />
+          </button>
+        </div>
+        <div className="max-h-[160px] overflow-y-auto scroll-thin">
+          {threads.length === 0 && (
+            <div className="text-[10.5px] px-[10px] py-[6px]" style={{ color: "var(--fg-4)" }}>No threads yet.</div>
+          )}
+          {[...threads].reverse().slice(0, 12).map((t) => {
+            const active = t.id === currentThreadId;
+            return (
+              <div key={t.id} className="flex items-center group">
+                <button
+                  onClick={() => { switchThread(t.id); setView("chat"); }}
+                  className="flex-1 text-left px-[12px] py-[6px] rounded text-[12px] truncate transition-colors"
+                  style={{ color: active ? "var(--violet-2)" : "var(--fg-2)", background: active ? "rgba(168, 85, 247, 0.06)" : "transparent" }}
+                  onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "rgba(245, 240, 228, 0.03)"; }}
+                  onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
+                >
+                  {t.title}
+                </button>
+                <button
+                  onClick={() => openModal({ kind: "confirm", title: `Delete "${t.title}"?`, body: `${t.messages.length} messages will be removed.`, danger: true, onConfirm: () => deleteThread(t.id) })}
+                  className="opacity-0 group-hover:opacity-100 px-2 transition-opacity"
+                  style={{ color: "var(--fg-4)" }}
+                  aria-label="delete thread"
+                  title="delete thread"
+                >
+                  <Trash2 size={11} />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="px-[14px] pt-[14px] pb-[8px]">
+        <div className="mono text-[10px] tracking-[0.18em] uppercase px-[10px] pb-[8px]" style={{ color: "var(--fg-3)" }}>
           Pinned pages
         </div>
-        {["own-wiki", "karpathy-llm-wiki", "ollama", "rag-pipeline"].map((slug) => (
+        {["own-wiki", "memory", "karpathy-llm-wiki", "ollama"].map((slug) => (
           <button
             key={slug}
-            onClick={() => { useStore.getState().setSelectedSlug(slug); useStore.getState().setView("wiki"); }}
-            className="w-full flex items-center gap-3 px-[12px] py-[7px] rounded text-[13px] transition-colors"
+            onClick={() => { setSelectedSlug(slug); setView("wiki"); }}
+            className="w-full flex items-center gap-3 px-[12px] py-[6px] rounded text-[13px] transition-colors"
             style={{ color: "var(--fg-2)" }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(245, 240, 228, 0.03)")}
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}

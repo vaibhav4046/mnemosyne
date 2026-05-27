@@ -9,3 +9,4 @@ _Append-only ledger of ingests, queries, and lint passes._
 - `2026-05-27T10:37:21.132Z` lint pass: 3 contradictions, 1 orphans, 2 link suggestions
 - `2026-05-27T10:37:51.694Z` lint pass: 4 contradictions, 1 orphans, 7 link suggestions
 - `2026-05-27T10:38:01.396Z` lint pass: 2 contradictions, 1 orphans, 1 link suggestions
+- `2026-05-27T17:34:31.306Z` memory +3 facts from "local-llm-setup"

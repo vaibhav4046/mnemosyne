@@ -64,15 +64,18 @@
     "extraResources": [
       {
         "from": ".next/standalone",
-        "to": "app/.next/standalone"
+        "to": "app/.next/standalone",
+        "filter": ["**/*"]
       },
       {
         "from": ".next/static",
-        "to": "app/.next/standalone/.next/static"
+        "to": "app/.next/standalone/.next/static",
+        "filter": ["**/*"]
       },
       {
         "from": "public",
-        "to": "app/.next/standalone/public"
+        "to": "app/.next/standalone/public",
+        "filter": ["**/*"]
       }
     ],
     "win": {

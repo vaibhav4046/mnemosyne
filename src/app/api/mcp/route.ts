@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connect, listConnected, disconnect, callTool, isAllowedCommand } from "@/lib/mcp/client";
+import { DATA_DIR } from "@/lib/paths";
 import fs from "node:fs/promises";
 import path from "node:path";
 
 export const runtime = "nodejs";
 
-const CONFIG_PATH = path.join(process.cwd(), "data", "mcp.json");
+const CONFIG_PATH = path.join(DATA_DIR, "mcp.json");
 
 async function loadConfigs() {
   try {

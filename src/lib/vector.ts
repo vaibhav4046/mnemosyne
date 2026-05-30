@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { embed } from "./ollama";
+import { DATA_DIR } from "./paths";
 
 export type VectorRecord = {
   id: string;
@@ -11,7 +12,6 @@ export type VectorRecord = {
   meta?: Record<string, unknown>;
 };
 
-const DATA_DIR = path.join(process.cwd(), "data");
 const STORE_PATH = path.join(DATA_DIR, "vectors.json");
 const TMP_PATH = STORE_PATH + ".tmp";
 const MAX_RECORDS = 100_000;

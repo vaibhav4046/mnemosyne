@@ -4,8 +4,10 @@ import os from "node:os";
 
 export type Roots = Record<string, string>;
 
+import { VAULT_DIR } from "./paths";
+
 export const ROOTS: Roots = {
-  vault: process.env.MNEMOSYNE_VAULT || path.join(process.cwd(), "vault"),
+  vault: VAULT_DIR,
   desktop: path.join(os.homedir(), "Desktop"),
   documents: path.join(os.homedir(), "Documents"),
   downloads: path.join(os.homedir(), "Downloads"),

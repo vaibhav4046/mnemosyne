@@ -1,8 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import matter from "gray-matter";
+import { VAULT_DIR } from "./paths";
 
-export const VAULT_DIR = process.env.MNEMOSYNE_VAULT || path.join(process.cwd(), "vault");
+export { VAULT_DIR };
 export const PAGES_DIR = path.join(VAULT_DIR, "pages");
 
 export type WikiPage = {

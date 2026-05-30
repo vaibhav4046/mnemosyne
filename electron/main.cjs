@@ -52,7 +52,7 @@ async function createWindow() {
     minHeight: 600,
     backgroundColor: "#050608",
     titleBarStyle: "default",
-    icon: path.join(__dirname, "..", "public", "logo.svg"),
+    icon: path.join(__dirname, "..", "build", "icon.ico"),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

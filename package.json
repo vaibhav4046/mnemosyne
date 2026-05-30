@@ -58,6 +58,7 @@
     "compression": "normal",
     "files": [
       "electron/**/*",
+      "build/icon.ico",
       "package.json",
       "!**/.next/**",
       "!**/dist-electron/**",
@@ -92,6 +93,7 @@
       }
     ],
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         {
           "target": "portable",

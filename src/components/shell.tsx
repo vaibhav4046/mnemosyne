@@ -16,21 +16,37 @@ import { ErrorBoundary } from "./error-boundary";
 import { CommandPalette } from "./command-palette";
 import { Menu } from "lucide-react";
 
+const VIEW_KEYS: Record<string, "chat" | "wiki" | "graph" | "files" | "agents" | "mcp" | "settings"> = {
+  "1": "chat", "2": "wiki", "3": "graph", "4": "files", "5": "agents", "6": "mcp", "7": "settings",
+};
+
 export function Shell() {
   const view = useStore((s) => s.view);
+  const setView = useStore((s) => s.setView);
   const setPaletteOpen = useStore((s) => s.setPaletteOpen);
   const setSidebarOpen = useStore((s) => s.setSidebarOpen);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "/") {
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key === "/") {
         e.preventDefault();
         setPaletteOpen(true);
+        return;
+      }
+      // ⌘1–7 jump to view (skip when typing in a field)
+      if (mod && VIEW_KEYS[e.key]) {
+        const el = document.activeElement;
+        const typing = el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || (el as HTMLElement).isContentEditable);
+        if (!typing) {
+          e.preventDefault();
+          setView(VIEW_KEYS[e.key]);
+        }
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [setPaletteOpen]);
+  }, [setPaletteOpen, setView]);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">

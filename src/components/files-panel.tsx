@@ -145,7 +145,7 @@ export function FilesPanel() {
   const filtered = q ? entries.filter((e) => e.name.toLowerCase().includes(q.toLowerCase())) : entries;
 
   return (
-    <div className="flex flex-col h-full relative z-10">
+    <div className="flex flex-col h-full relative z-10 workspace">
       <header className="h-12 px-5 flex items-center justify-between glass" style={{ borderBottom: "0.5px solid var(--border)" }}>
         <div className="flex items-center gap-2.5">
           <Folder size={15} style={{ color: "var(--violet)" }} />
@@ -237,7 +237,7 @@ export function FilesPanel() {
         </div>
 
         {selected && (
-          <div className="w-[360px] shrink-0 overflow-y-auto scroll-thin" style={{ borderLeft: "0.5px solid var(--border)", background: "var(--navy)" }}>
+          <div className="pane-rail overflow-y-auto scroll-thin" style={{ borderLeft: "0.5px solid var(--border)", background: "var(--navy)" }}>
             <div className="px-4 py-3" style={{ borderBottom: "0.5px solid var(--border)" }}>
               <div className="mono text-[10px] tracking-[0.16em] uppercase mb-2 flex items-center gap-2" style={{ color: "var(--fg-3)" }}>
                 <Eye size={11} /> Preview

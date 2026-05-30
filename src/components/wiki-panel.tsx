@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useStore } from "@/store";
-import { BookOpen, Plus, Save, RefreshCcw, Tag, Search, X, Trash2, Download, Clock, FileText, Link2, ChevronDown } from "lucide-react";
+import { BookOpen, Plus, Save, RefreshCcw, Tag, Search, X, Trash2, Download, Clock, FileText, Link2, ChevronDown, PanelLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { WikiPage } from "@/lib/wiki";
@@ -22,6 +22,7 @@ export function WikiPanel() {
   const [editTitle, setEditTitle] = useState("");
   const [q, setQ] = useState("");
   const [exportOpen, setExportOpen] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -142,15 +143,15 @@ export function WikiPanel() {
   }
 
   return (
-    <div className="flex h-full relative z-10">
-      <div className="w-[300px] shrink-0 flex flex-col" style={{ borderRight: "0.5px solid var(--border)", background: "var(--navy)" }}>
+    <div className="flex h-full relative z-10 workspace">
+      <div className={`pane-list flex flex-col ${listOpen ? "pane-open" : ""}`} style={{ borderRight: "0.5px solid var(--border)", background: "var(--navy)" }}>
         <header className="h-12 px-4 flex items-center justify-between" style={{ borderBottom: "0.5px solid var(--border)" }}>
-          <div className="flex items-center gap-2">
-            <BookOpen size={14} style={{ color: "var(--violet)" }} />
+          <div className="flex items-center gap-2 min-w-0">
+            <BookOpen size={14} style={{ color: "var(--violet)" }} className="shrink-0" />
             <span className="text-[13px] font-medium">Wiki</span>
-            <span className="text-[11px]" style={{ color: "var(--fg-3)" }}>· {pages.length} pages</span>
+            <span className="text-[11px] truncate" style={{ color: "var(--fg-3)" }}>· {pages.length}</span>
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 shrink-0">
             <button onClick={refresh} className="btn-ghost btn p-1.5" title="refresh" aria-label="refresh wiki">
               <RefreshCcw size={13} />
             </button>
@@ -198,18 +199,21 @@ export function WikiPanel() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="pane-main flex flex-col">
         {page ? (
           <>
-            <header className="h-12 px-5 flex items-center justify-between glass" style={{ borderBottom: "0.5px solid var(--border)" }}>
-              <div className="flex-1 min-w-0">
+            <header className="h-12 px-5 flex items-center justify-between glass gap-3" style={{ borderBottom: "0.5px solid var(--border)" }}>
+              <div className="flex-1 min-w-0 flex items-center gap-2">
+                <button onClick={() => setListOpen((o) => !o)} className="pane-list-toggle btn-ghost btn p-1.5 shrink-0" title="pages" aria-label="toggle page list">
+                  <PanelLeft size={14} />
+                </button>
                 {editing ? (
                   <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="input text-[14px] py-1 max-w-md" aria-label="page title" />
                 ) : (
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="serif text-[18px] truncate" style={{ color: "var(--fg-1)" }}>{page.title}</span>
-                    <span className="chip shrink-0">/{page.slug}</span>
-                    <span className="mono text-[10.5px]" style={{ color: "var(--fg-3)" }}>
+                    <span className="chip shrink-0 hidden sm:inline-flex">/{page.slug}</span>
+                    <span className="mono text-[10.5px] shrink-0 hidden md:inline" style={{ color: "var(--fg-3)" }}>
                       <Clock size={9} className="inline -mt-0.5 mr-1" />{page.readingMin} min · <FileText size={9} className="inline -mt-0.5 mx-1" />{page.words.toLocaleString()} words
                     </span>
                   </div>
@@ -269,7 +273,7 @@ export function WikiPanel() {
                 {editing ? (
                   <textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} className="input scroll-thin font-mono text-[12.5px] min-h-[60vh] w-full" spellCheck={false} aria-label="page body" />
                 ) : (
-                  <article className="prose-mn max-w-3xl mx-auto">
+                  <article className="prose-mn article-fluid mx-auto">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
@@ -335,7 +339,7 @@ export function WikiPanel() {
               </div>
 
               {!editing && toc.length >= 2 && (
-                <div className="w-[200px] shrink-0 overflow-y-auto scroll-thin p-4" style={{ borderLeft: "0.5px solid var(--border-2)" }}>
+                <div className="pane-rail overflow-y-auto scroll-thin p-4" style={{ borderLeft: "0.5px solid var(--border-2)" }}>
                   <div className="mono text-[10px] tracking-[0.18em] uppercase mb-3" style={{ color: "var(--fg-3)" }}>On this page</div>
                   <div className="space-y-1">
                     {toc.map((h, i) => (
@@ -351,12 +355,18 @@ export function WikiPanel() {
         ) : (
           <div className="flex-1 flex items-center justify-center text-sm" style={{ color: "var(--fg-3)" }}>
             {pages.length === 0 ? (
-              <div className="text-center">
+              <div className="text-center anim-pop">
                 <BookOpen className="mx-auto mb-3 opacity-50" size={32} />
-                <p>The vault is empty.</p>
-                <button onClick={newPage} className="btn btn-primary mt-3"><Plus size={13} /> create first page</button>
+                <p className="mb-1">The vault is empty.</p>
+                <p className="text-[12px] mb-3" style={{ color: "var(--fg-4)" }}>Ingest a file or create your first page.</p>
+                <button onClick={newPage} className="btn btn-primary"><Plus size={13} /> create first page</button>
               </div>
-            ) : <p>Select a page.</p>}
+            ) : (
+              <div className="text-center">
+                <button onClick={() => setListOpen(true)} className="pane-list-toggle btn btn-secondary mb-3"><PanelLeft size={13} /> browse pages</button>
+                <p>Select a page.</p>
+              </div>
+            )}
           </div>
         )}
       </div>

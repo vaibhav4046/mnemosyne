@@ -337,3 +337,44 @@ button.chip.solid:hover, a.chip.solid:hover { filter: brightness(1.12); color: v
   .sidebar-mobile { position: absolute; left: 0; top: 0; bottom: 0; z-index: 30; transform: translateX(-100%); transition: transform .25s var(--ease-out); box-shadow: 0 0 60px rgba(0,0,0,0.5); }
   .sidebar-mobile.open { transform: translateX(0); }
 }
+
+/* ===========================================================================
+   RESPONSIVE WORKSPACE PANES — container-query based so panels collapse
+   gracefully as the window/sidebar resizes (fixes wiki/files layout break).
+   =========================================================================== */
+.workspace { container-type: inline-size; }
+
+/* list pane: fluid width with sane bounds, never collapses content */
+.pane-list {
+  width: clamp(220px, 26%, 320px);
+  flex-shrink: 0;
+  min-width: 0;
+}
+/* right rails (TOC / preview): fluid, hidden when there isn't room */
+.pane-rail {
+  width: clamp(180px, 22%, 260px);
+  flex-shrink: 0;
+  min-width: 0;
+}
+.pane-main { flex: 1 1 0%; min-width: 0; }
+
+/* Below ~720px of *panel* width, drop the right rail entirely. */
+@container (max-width: 720px) {
+  .pane-rail { display: none !important; }
+}
+/* Below ~520px, collapse the list to an overlay drawer toggled by a button. */
+@container (max-width: 520px) {
+  .pane-list {
+    position: absolute; left: 0; top: 0; bottom: 0; z-index: 20;
+    width: min(300px, 86%);
+    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    transform: translateX(-101%);
+    transition: transform .22s var(--ease-out);
+  }
+  .pane-list.pane-open { transform: translateX(0); }
+  .pane-list-toggle { display: inline-flex !important; }
+}
+.pane-list-toggle { display: none; }
+
+/* article width adapts to available space, stays readable */
+.prose-mn.article-fluid { max-width: min(46rem, 100%); }

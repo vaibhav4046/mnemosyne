@@ -54,7 +54,7 @@
   "build": {
     "appId": "com.ownwiki.app",
     "productName": "Own Wiki",
-    "asar": true,
+    "asar": false,
     "compression": "normal",
     "files": [
       "electron/**/*",

@@ -53,3 +53,6 @@ qa-status.txt
 qa-out.txt
 prod.log
 _state.txt
+
+# scratch
+_*.txt

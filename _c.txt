@@ -1,5 +1,0 @@
-[master e388d1b] feat: branded multi-size icon.ico, AI keep-alive+warmup (first token ~450ms), E2E verified, QA 49/49
- 1 file changed, 2 insertions(+)
- create mode 100644 _g.txt
-HEAD e388d1b
-DIRTY 1

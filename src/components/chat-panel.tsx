@@ -339,7 +339,7 @@ export function ChatPanel() {
       <div ref={scrollRef} className="overflow-y-auto scroll-thin pt-[80px] pb-[24px]">
         {empty ? (
           <div className="grid place-items-center h-full text-center p-6">
-            <div className="max-w-[560px]">
+            <div className="max-w-[560px] anim-pop">
               <div className="w-[92px] h-[92px] mx-auto mb-[28px] opacity-90">
                 <Image src="/logo.svg" alt="" width={92} height={92} />
               </div>
@@ -349,7 +349,7 @@ export function ChatPanel() {
               <p style={{ color: "var(--fg-3)", fontSize: 15, maxWidth: 440, margin: "0 auto 36px" }}>
                 Paste / drop a file, or just type. Memory updates after every answer.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-[10px] text-left">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-[10px] text-left stagger">
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s.q}
@@ -457,7 +457,7 @@ export function ChatPanel() {
         )}
       </div>
 
-      <div className="px-[32px] pt-[18px] pb-[24px]" style={{ borderTop: "0.5px solid var(--border)", background: "linear-gradient(180deg, transparent, rgba(8,9,15,0.6) 40%)" }}>
+      <div className="px-[32px] pt-[18px] pb-[24px]" style={{ borderTop: "0.5px solid var(--border)", background: "linear-gradient(180deg, transparent, color-mix(in srgb, var(--void) 60%, transparent) 40%)" }}>
         <div className="max-w-[760px] mx-auto p-[14px] rounded-md transition-colors" style={{ background: "var(--navy-2)", border: "0.5px solid var(--border)" }}>
           {attachments.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-[8px] pb-[8px]" style={{ borderBottom: "0.5px solid var(--border-2)" }}>

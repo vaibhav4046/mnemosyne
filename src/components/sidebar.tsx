@@ -17,6 +17,8 @@ import {
   Activity,
   Plus,
   Trash2,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 type NavItem = { id: View; label: string; icon: React.ComponentType<{ size?: number }>; kbd: string };
@@ -50,6 +52,8 @@ export function Sidebar() {
   const setSelectedSlug = useStore((s) => s.setSelectedSlug);
   const sidebarWidth = useStore((s) => s.sidebarWidth);
   const setSidebarWidth = useStore((s) => s.setSidebarWidth);
+  const theme = useStore((s) => s.theme);
+  const toggleTheme = useStore((s) => s.toggleTheme);
 
   function startResize(e: React.MouseEvent) {
     e.preventDefault();
@@ -237,7 +241,17 @@ export function Sidebar() {
         </button>
       </nav>
 
-      <div className="m-[14px] p-[14px] rounded-md" style={{ background: "var(--navy-2)", border: "0.5px solid var(--border)" }}>
+      <div className="mx-[14px] mb-[10px] flex items-center justify-between">
+        <span className="mono text-[10px] tracking-[0.16em] uppercase flex items-center gap-1.5" style={{ color: "var(--fg-3)" }}>
+          {theme === "dark" ? <Moon size={11} /> : <Sun size={11} />}
+          {theme === "dark" ? "Dark" : "Light"}
+        </span>
+        <button onClick={toggleTheme} className="theme-toggle" aria-label="Toggle light / dark theme" title="Toggle theme">
+          <span className="knob">{theme === "dark" ? <Moon size={11} color="#fff" /> : <Sun size={11} color="#fff" />}</span>
+        </button>
+      </div>
+
+      <div className="m-[14px] mt-0 p-[14px] rounded-md" style={{ background: "var(--navy-2)", border: "0.5px solid var(--border)" }}>
         <div className="flex items-center gap-2 mono text-[11px] mb-[6px]" style={{ color: "var(--fg-2)" }}>
           <span className="status-dot" style={{ background: modelInfo?.online ? "var(--success)" : "var(--danger)" }} />
           <span style={{ color: "var(--fg-3)", flex: 1 }}>ollama</span>

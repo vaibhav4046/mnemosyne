@@ -36,6 +36,9 @@ type State = {
   setSidebarOpen: (b: boolean) => void;
   sidebarWidth: number;
   setSidebarWidth: (w: number) => void;
+  theme: "dark" | "light";
+  setTheme: (t: "dark" | "light") => void;
+  toggleTheme: () => void;
 
   threads: Thread[];
   currentThreadId: string | null;
@@ -126,9 +129,21 @@ export const useStore = create<State>((set, get) => ({
   setSidebarOpen: (b) => set({ sidebarOpen: b }),
   sidebarWidth: typeof window !== "undefined" ? Number(localStorage.getItem("ow.sidebar.w") || 252) : 252,
   setSidebarWidth: (w) => {
-    const clamped = Math.max(200, Math.min(420, Math.round(w)));
+    const clamped = Math.max(200, Math.min(440, Math.round(w)));
     if (typeof window !== "undefined") localStorage.setItem("ow.sidebar.w", String(clamped));
     set({ sidebarWidth: clamped });
+  },
+  theme: typeof window !== "undefined" ? ((localStorage.getItem("ow.theme") as "dark" | "light") || "dark") : "dark",
+  setTheme: (t) => {
+    if (typeof document !== "undefined") document.documentElement.setAttribute("data-theme", t);
+    if (typeof window !== "undefined") localStorage.setItem("ow.theme", t);
+    set({ theme: t });
+  },
+  toggleTheme: () => {
+    const t = get().theme === "dark" ? "light" : "dark";
+    if (typeof document !== "undefined") document.documentElement.setAttribute("data-theme", t);
+    if (typeof window !== "undefined") localStorage.setItem("ow.theme", t);
+    set({ theme: t });
   },
 
   threads: initial.threads,

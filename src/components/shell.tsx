@@ -46,13 +46,15 @@ export function Shell() {
         <Topbar />
         <div className="flex-1 overflow-hidden min-h-0">
           <ErrorBoundary>
-            {view === "chat" && <ChatPanel />}
-            {view === "wiki" && <WikiPanel />}
-            {view === "graph" && <GraphPanel />}
-            {view === "files" && <FilesPanel />}
-            {view === "agents" && <AgentsPanel />}
-            {view === "mcp" && <McpPanel />}
-            {view === "settings" && <SettingsPanel />}
+            <div key={view} className="h-full anim-view">
+              {view === "chat" && <ChatPanel />}
+              {view === "wiki" && <WikiPanel />}
+              {view === "graph" && <GraphPanel />}
+              {view === "files" && <FilesPanel />}
+              {view === "agents" && <AgentsPanel />}
+              {view === "mcp" && <McpPanel />}
+              {view === "settings" && <SettingsPanel />}
+            </div>
           </ErrorBoundary>
         </div>
       </main>

@@ -155,6 +155,7 @@ export function ChatPanel() {
     const ac = new AbortController();
     abortRef.current = ac;
     let acc = "";
+    let gotDone = false;
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -185,13 +186,14 @@ export function ChatPanel() {
             const ev = JSON.parse(line.slice(6));
             if (ev.type === "token") { acc += ev.text; updateInCurrent(asstId, { content: acc }); }
             else if (ev.type === "citations") updateInCurrent(asstId, { citations: ev.citations });
+            else if (ev.type === "done") gotDone = true;
             else if (ev.type === "error") updateInCurrent(asstId, { content: acc, error: ev.error, streaming: false });
           } catch {}
         }
       }
       updateInCurrent(asstId, { streaming: false });
-      if (acc) {
-        // sentUserText may contain attached file blob — pass cleaner version for memory
+      if (acc && gotDone) {
+        // Only persist memory from a fully-completed answer (not aborted/truncated).
         const cleanUser = sentAttachments.length ? sentUserText.replace(/<file[^>]*>[\s\S]*?<\/file>/g, "[attached files]") : sentUserText;
         extractMemory(cleanUser, acc);
       }

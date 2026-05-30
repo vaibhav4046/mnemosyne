@@ -72,7 +72,13 @@ async function ui() {
   const ctx = await browser.newContext({ viewport: { width: 1500, height: 920 } });
   const page = await ctx.newPage();
   page.on("pageerror", (e) => fail("ui: page error", e));
-  page.on("console", (msg) => { if (msg.type() === "error" && !msg.text().includes("Download the React DevTools")) fail("ui: console error", new Error(msg.text())); });
+  page.on("console", (msg) => {
+    if (msg.type() !== "error") return;
+    const t = msg.text();
+    // Ignore framework/asset noise: React devtools hint, favicon, font preloads, HMR.
+    if (/Download the React DevTools|icon\.svg|favicon|__nextjs_font|\/_next\/static\/.*\.(woff2?|png|svg)|net::ERR_ABORTED 404|the server responded with a status of 404/i.test(t)) return;
+    fail("ui: console error", new Error(t));
+  });
 
   await page.goto(BASE);
   await page.waitForLoadState("networkidle", { timeout: 30000 }).catch(() => {});
@@ -226,7 +232,73 @@ async function ui() {
   await browser.close();
 }
 
+async function pollJob(id, ms = 25000) {
+  const start = Date.now();
+  while (Date.now() - start < ms) {
+    const r = await http("/api/agents");
+    const job = (r.body.jobs || []).find((j) => j.id === id);
+    if (job && (job.status === "done" || job.status === "error")) return job;
+    await sleep(800);
+  }
+  return null;
+}
+
+async function security() {
+  // --- MCP command allowlist (RCE guard) ---
+  try {
+    const r = await http("/api/mcp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "add", server: { name: "qa-evil", command: "powershell", args: ["-c", "calc"] } }) });
+    if (r.status === 400) pass("sec: MCP rejects non-allowlisted command"); else fail("sec: MCP rejects non-allowlisted command", new Error(`got ${r.status}`));
+  } catch (e) { fail("sec: MCP rejects non-allowlisted command", e); }
+  try {
+    const r = await http("/api/mcp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "add", server: { name: "qa-evil2", command: "C:\\Windows\\System32\\cmd.exe", args: [] } }) });
+    if (r.status === 400) pass("sec: MCP rejects absolute-path cmd.exe"); else fail("sec: MCP rejects absolute-path cmd.exe", new Error(`got ${r.status}`));
+  } catch (e) { fail("sec: MCP rejects absolute-path cmd.exe", e); }
+  try {
+    const r = await http("/api/mcp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "add", server: { name: "qa-ok", command: "npx", args: ["-y", "x"] } }) });
+    if (r.status === 200) pass("sec: MCP accepts npx launcher"); else fail("sec: MCP accepts npx launcher", new Error(`got ${r.status}`));
+    await http("/api/mcp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "remove", name: "qa-ok" }) });
+  } catch (e) { fail("sec: MCP accepts npx launcher", e); }
+
+  // --- Ingest arbitrary-file-read guard ---
+  for (const fp of ["C:\\Windows\\win.ini", "C:\\Users\\lalwa\\.ssh\\id_rsa", "/etc/passwd"]) {
+    try {
+      const r = await http("/api/ingest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ source: "qa", filePath: fp }) });
+      if (r.status === 400) pass(`sec: ingest blocks filePath outside roots (${fp.slice(0, 18)})`); else fail(`sec: ingest blocks filePath (${fp})`, new Error(`got ${r.status}`));
+    } catch (e) { fail(`sec: ingest blocks filePath (${fp})`, e); }
+  }
+
+  // --- SSRF guard on browser agent (rejected before chromium launch) ---
+  for (const url of ["http://169.254.169.254/latest/meta-data/", "http://127.0.0.1:11434/api/tags", "http://192.168.1.1/", "file:///C:/Windows/win.ini"]) {
+    try {
+      const r = await http("/api/agents", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "browser", title: "qa-ssrf", input: { url, task: "x", maxSteps: 1 } }) });
+      if (r.status !== 200) { fail(`sec: SSRF ${url}`, new Error(`spawn ${r.status}`)); continue; }
+      const job = await pollJob(r.body.jobId, 15000);
+      if (job && job.status === "error" && /block|private|loopback|scheme|local/i.test(job.error || "")) pass(`sec: SSRF blocked ${url.slice(0, 26)}`);
+      else fail(`sec: SSRF ${url}`, new Error(job ? `status=${job.status} err=${job.error}` : "no terminal job"));
+    } catch (e) { fail(`sec: SSRF ${url}`, e); }
+  }
+
+  // --- CSRF / cross-origin middleware ---
+  try {
+    const r = await http("/api/ingest", { method: "POST", headers: { "Content-Type": "application/json", Origin: "http://evil.example" }, body: JSON.stringify({ source: "x", text: "y" }) });
+    if (r.status === 403) pass("sec: cross-origin POST blocked (Origin)"); else fail("sec: cross-origin POST blocked (Origin)", new Error(`got ${r.status}`));
+  } catch (e) { fail("sec: cross-origin POST blocked (Origin)", e); }
+  try {
+    const r = await http("/api/ingest", { method: "POST", headers: { "Content-Type": "application/json", "Sec-Fetch-Site": "cross-site" }, body: JSON.stringify({ source: "x", text: "y" }) });
+    if (r.status === 403) pass("sec: cross-site POST blocked (Sec-Fetch-Site)"); else fail("sec: cross-site POST blocked (Sec-Fetch-Site)", new Error(`got ${r.status}`));
+  } catch (e) { fail("sec: cross-site POST blocked (Sec-Fetch-Site)", e); }
+
+  // --- CSP header present on app pages ---
+  try {
+    const r = await fetch(BASE + "/");
+    const csp = r.headers.get("content-security-policy");
+    if (csp && csp.includes("default-src") && csp.includes("connect-src 'self'")) pass("sec: CSP header present on pages");
+    else fail("sec: CSP header present on pages", new Error(csp ? "weak CSP" : "no CSP"));
+  } catch (e) { fail("sec: CSP header present on pages", e); }
+}
+
 await api();
+await security();
 await ui();
 
 const okCount = results.filter((r) => r.ok).length;

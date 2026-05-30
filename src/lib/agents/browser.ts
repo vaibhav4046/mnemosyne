@@ -1,5 +1,6 @@
 import type { Browser, Page } from "playwright";
 import { generateJSON, chatOnce } from "../ollama";
+import { assertPublicUrl } from "../validate";
 import type { AgentRunner } from "./types";
 
 export type BrowserInput = {
@@ -45,10 +46,19 @@ async function snapshot(page: Page) {
 
 async function exec(page: Page, act: Action, log: (m: string, lvl?: "info" | "warn" | "error") => void): Promise<string> {
   switch (act.action) {
-    case "navigate":
-      log(`→ navigate ${act.url}`);
-      await page.goto(act.url, { waitUntil: "domcontentloaded", timeout: 30000 });
-      return `Navigated to ${act.url}`;
+    case "navigate": {
+      let safe: string;
+      try {
+        safe = await assertPublicUrl(act.url);
+      } catch (e) {
+        const msg = `blocked navigate ${act.url}: ${e instanceof Error ? e.message : e}`;
+        log(msg, "warn");
+        return msg;
+      }
+      log(`→ navigate ${safe}`);
+      await page.goto(safe, { waitUntil: "domcontentloaded", timeout: 30000 });
+      return `Navigated to ${safe}`;
+    }
     case "click":
       log(`→ click ${act.selector}`);
       await page.locator(act.selector).first().click({ timeout: 10000 });
@@ -77,7 +87,13 @@ async function exec(page: Page, act: Action, log: (m: string, lvl?: "info" | "wa
 export const browserRunner: AgentRunner = async (job, log) => {
   const input = job.input as BrowserInput;
   const maxSteps = Math.min(input.maxSteps || 8, 15);
-  const startUrl = input.url || "https://duckduckgo.com/";
+  const rawStart = input.url || "https://duckduckgo.com/";
+  let startUrl: string;
+  try {
+    startUrl = await assertPublicUrl(rawStart);
+  } catch (e) {
+    throw new Error(`start URL blocked: ${e instanceof Error ? e.message : e}`);
+  }
 
   log(`Launching chromium for task: ${input.task}`);
   let browser: Browser | null = null;

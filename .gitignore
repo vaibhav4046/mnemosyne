@@ -49,3 +49,7 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /playwright/.cache/
+qa-status.txt
+qa-out.txt
+prod.log
+_state.txt

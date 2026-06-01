@@ -53,9 +53,8 @@ export function Topbar() {
         >
           <AlertTriangle size={13} className="shrink-0" />
           <span>
-            <strong>Ollama is offline.</strong> Chat, ingest and agents need it. Start Ollama and pull{" "}
-            <code className="mono" style={{ color: "var(--fg-1)" }}>llama3.2:3b</code> +{" "}
-            <code className="mono" style={{ color: "var(--fg-1)" }}>nomic-embed-text</code>, then it reconnects automatically.
+            <strong>No AI engine connected.</strong> Start Ollama locally, or add a free cloud key (Groq · Gemini · OpenRouter) in{" "}
+            <button onClick={() => useStore.getState().setView("settings")} className="underline" style={{ color: "var(--fg-1)" }}>Settings → AI Providers</button>. Reconnects automatically.
           </span>
         </div>
       )}

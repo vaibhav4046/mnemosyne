@@ -69,7 +69,12 @@ Use proper markdown — blank lines between paragraphs, bullets where useful, **
   // Defend against any missing/scalar field a small model might emit.
   const summary = typeof plan?.summary === "string" && plan.summary.trim() ? plan.summary.trim() : `Synthesis of ${findings.length} research agents on ${input.topic || "the topic"}.`;
   const sections = Array.isArray(plan?.sections) ? plan!.sections.filter((s) => s && typeof s.body === "string" && s.body.trim()) : [];
-  const insights = Array.isArray(plan?.insights) ? plan!.insights.filter((x) => typeof x === "string" && x.trim()) : [];
+  // Strip any leading bullet/number marker the model prepended (e.g. "* ", "- ",
+  // "• ", "1. ") so we don't render a double marker after wrapping in "- ".
+  const stripBullet = (s: string) => s.trim().replace(/^([-*•‣]|\d+[.)])\s+/, "").trim();
+  const insights = Array.isArray(plan?.insights)
+    ? plan!.insights.filter((x) => typeof x === "string" && x.trim()).map(stripBullet).filter(Boolean)
+    : [];
   const tags = Array.isArray(plan?.tags) ? plan!.tags.filter((x) => typeof x === "string") : [];
   const baseSlug = typeof plan?.slug === "string" && plan.slug.trim() ? plan.slug : `swarm-${input.topic || "report"}`;
   const slug = slugify(baseSlug) || `swarm-report`;
@@ -78,9 +83,14 @@ Use proper markdown — blank lines between paragraphs, bullets where useful, **
   lines.push(`> ${summary}`);
   lines.push("");
 
+  // Clean a model-written heading: drop leading "#"/bullet markers and surrounding
+  // bold so we don't render "## **Heading**" (redundant bold inside an H2).
+  const cleanHeading = (h: string) =>
+    h.trim().replace(/^#+\s*/, "").replace(/^([-*•‣]|\d+[.)])\s+/, "").replace(/^\*\*(.+?)\*\*$/, "$1").trim();
   if (sections.length) {
     for (const s of sections) {
-      lines.push(`## ${(typeof s.heading === "string" && s.heading.trim() ? s.heading : "Findings").trim()}`);
+      const heading = typeof s.heading === "string" && s.heading.trim() ? cleanHeading(s.heading) : "Findings";
+      lines.push(`## ${heading || "Findings"}`);
       lines.push("");
       lines.push(s.body.trim());
       lines.push("");

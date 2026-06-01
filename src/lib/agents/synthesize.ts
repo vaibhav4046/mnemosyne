@@ -56,27 +56,70 @@ Produce a JSON page plan that:
 
 Use proper markdown — blank lines between paragraphs, bullets where useful, **bold** for key terms.`;
 
-  const plan = await generateJSON<Plan>(
-    prompt,
-    `{ "slug": "string", "title": "string", "tags": ["string"], "summary": "string", "sections": [{"heading":"string","body":"string"}], "insights": ["string"] }`,
-  );
-
-  const slug = slugify(plan.slug || `swarm-${Date.now()}`);
-  const lines: string[] = [];
-  lines.push(`> ${plan.summary.trim()}`);
-  lines.push("");
-  for (const s of plan.sections) {
-    lines.push(`## ${s.heading.trim()}`);
-    lines.push("");
-    lines.push(s.body.trim());
-    lines.push("");
+  let plan: Plan | null = null;
+  try {
+    plan = await generateJSON<Plan>(
+      prompt,
+      `{ "slug": "string", "title": "string", "tags": ["string"], "summary": "string", "sections": [{"heading":"string","body":"string"}], "insights": ["string"] }`,
+    );
+  } catch (e) {
+    log(`structured synthesis failed (${e instanceof Error ? e.message : e}) — using fallback`, "warn");
   }
-  if (plan.insights?.length) {
+
+  // Defend against any missing/scalar field a small model might emit.
+  const summary = typeof plan?.summary === "string" && plan.summary.trim() ? plan.summary.trim() : `Synthesis of ${findings.length} research agents on ${input.topic || "the topic"}.`;
+  const sections = Array.isArray(plan?.sections) ? plan!.sections.filter((s) => s && typeof s.body === "string" && s.body.trim()) : [];
+  const insights = Array.isArray(plan?.insights) ? plan!.insights.filter((x) => typeof x === "string" && x.trim()) : [];
+  const tags = Array.isArray(plan?.tags) ? plan!.tags.filter((x) => typeof x === "string") : [];
+  const baseSlug = typeof plan?.slug === "string" && plan.slug.trim() ? plan.slug : `swarm-${input.topic || "report"}`;
+  const slug = slugify(baseSlug) || `swarm-report`;
+
+  const lines: string[] = [];
+  lines.push(`> ${summary}`);
+  lines.push("");
+
+  if (sections.length) {
+    for (const s of sections) {
+      lines.push(`## ${(typeof s.heading === "string" && s.heading.trim() ? s.heading : "Findings").trim()}`);
+      lines.push("");
+      lines.push(s.body.trim());
+      lines.push("");
+    }
+  } else {
+    // Fallback: render each agent's grounded answer directly so we never lose data.
+    for (const f of findings) {
+      const r = f.result as { answer?: string; sources?: { n: number; title: string; url: string }[]; query?: string } | undefined;
+      lines.push(`## ${r?.query || f.title}`);
+      lines.push("");
+      lines.push(typeof r?.answer === "string" && r.answer.trim() ? r.answer.trim() : "_(no answer)_");
+      if (Array.isArray(r?.sources) && r!.sources.length) {
+        lines.push("");
+        lines.push("**Sources:** " + r!.sources.map((s) => `[${s.n}] ${s.url}`).join(" · "));
+      }
+      lines.push("");
+    }
+  }
+
+  if (insights.length) {
     lines.push("## Key insights");
     lines.push("");
-    for (const i of plan.insights) lines.push(`- ${i}`);
+    for (const i of insights) lines.push(`- ${i}`);
     lines.push("");
   }
+
+  // Always append a real sources section aggregated from the agents.
+  const allSources = new Set<string>();
+  for (const f of findings) {
+    const r = f.result as { sources?: { url: string }[] } | undefined;
+    if (Array.isArray(r?.sources)) for (const s of r!.sources) if (s?.url) allSources.add(s.url);
+  }
+  if (allSources.size) {
+    lines.push("## Sources");
+    lines.push("");
+    for (const u of allSources) lines.push(`- ${u}`);
+    lines.push("");
+  }
+
   lines.push("## Contributing agents");
   lines.push("");
   for (const f of findings) lines.push(`- \`${f.kind}\` — ${f.title} (job \`${f.id}\`)`);
@@ -84,13 +127,13 @@ Use proper markdown — blank lines between paragraphs, bullets where useful, **
   await writePage({
     slug,
     title: input.title,
-    tags: ["swarm", ...(plan.tags || [])].slice(0, 6),
+    tags: ["swarm", ...tags].slice(0, 6),
     sources: findings.map((f) => `job:${f.id}`),
     body: lines.join("\n"),
   });
   await rebuildIndex();
-  await appendLog(`synthesise ${input.jobIds.length} jobs → [[${slug}]]`);
-  log(`Wrote synthesis page: ${slug}`);
+  await appendLog(`synthesise ${findings.length} jobs → [[${slug}]]`);
+  log(`Wrote synthesis page: ${slug} (${findings.length} agents, ${allSources.size} sources)`);
 
-  return { slug, title: input.title, insights: plan.insights, contributing: findings.map((f) => f.id) };
+  return { slug, title: input.title, insights, sources: [...allSources], contributing: findings.map((f) => f.id) };
 };

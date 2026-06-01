@@ -14,20 +14,23 @@ export async function POST(req: NextRequest) {
   const topic = clampText(body.topic, 200) || "general";
   const kind: SwarmKind = body.kind === "broad" ? "broad" : "research";
 
+  // Each agent searches a DIFFERENT angle of the same topic so the synthesis
+  // gets diverse, non-overlapping evidence. query drives the web search; task
+  // shapes the grounded summary.
   const tasks =
     kind === "broad"
       ? [
-          { url: undefined, task: `Find the top 5 most recent news headlines about: ${topic}` },
-          { url: undefined, task: `Find 3 high-quality reference pages or wiki articles about: ${topic}` },
-          { url: undefined, task: `Find 3 recent discussions or threads about: ${topic} from Hacker News or Reddit` },
+          { query: `${topic}`, task: `Give a clear factual overview of ${topic}: what it is, why it matters, key facts.` },
+          { query: `${topic} examples applications`, task: `Describe real applications and examples of ${topic}.` },
+          { query: `${topic} advantages limitations`, task: `Explain the advantages, limitations, and trade-offs of ${topic}.` },
         ]
       : [
-          { url: undefined, task: `Search the web and summarise the current state-of-the-art on: ${topic}` },
-          { url: "https://arxiv.org/", task: `Find the 3 most relevant recent papers about: ${topic}` },
-          { url: "https://news.ycombinator.com/", task: `Find top HN discussions related to: ${topic}` },
+          { query: `${topic}`, task: `Explain what ${topic} is and how it works, with specifics.` },
+          { query: `${topic} techniques methods`, task: `Summarise the main techniques, methods, and approaches in ${topic}.` },
+          { query: `${topic} applications use cases`, task: `Summarise real-world applications and use cases of ${topic}.` },
         ];
 
-  const jobs = await Promise.all(tasks.map((t) => spawn("browser", `Swarm: ${t.task.slice(0, 60)}`, t)));
+  const jobs = await Promise.all(tasks.map((t) => spawn("browser", `Swarm: ${t.query}`, { ...t, maxSources: 5 })));
   const lintJob = await spawn("lint", `Swarm: lint after research on ${topic}`, {});
   const ids = [...jobs.map((j) => j.id), lintJob.id];
 

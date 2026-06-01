@@ -11,8 +11,8 @@ export function AgentsPanel() {
   const [jobs, setJobs] = useState<AgentJob[]>([]);
   const [selected, setSelected] = useState<AgentJob | null>(null);
   const [streamOk, setStreamOk] = useState(false);
-  const [browserTask, setBrowserTask] = useState("Find the top 3 trending Hacker News posts and summarise each in one line.");
-  const [browserStart, setBrowserStart] = useState("https://news.ycombinator.com");
+  const [browserTask, setBrowserTask] = useState("Summarise the latest advances in retrieval-augmented generation.");
+  const [browserStart, setBrowserStart] = useState("");
   const [swarmTopic, setSwarmTopic] = useState("local-first AI assistants");
   const esRef = useRef<EventSource | null>(null);
   const retryRef = useRef<number | null>(null);
@@ -100,7 +100,7 @@ export function AgentsPanel() {
         return;
       }
     }
-    spawn({ kind: "browser", title: `Browser: ${browserTask.slice(0, 60)}`, input: { url, task: browserTask, maxSteps: 8 } }, "Browser agent");
+    spawn({ kind: "browser", title: `Browser: ${browserTask.slice(0, 60)}`, input: { url, task: browserTask, query: url ? undefined : browserTask, maxSources: 4 } }, "Browser agent");
   }
 
   function badge(status: string) {
@@ -154,14 +154,14 @@ export function AgentsPanel() {
               onChange={(e) => setBrowserTask(e.target.value)}
               className="input text-[12px] resize-none"
               rows={3}
-              placeholder="natural-language task — agent decides navigate/click/fill/scroll/extract"
+              placeholder="research task — searches the web, reads sources, answers with citations"
               aria-label="browser task"
             />
             <input
               value={browserStart}
               onChange={(e) => setBrowserStart(e.target.value)}
               className="input text-[12px]"
-              placeholder="(optional) start URL — default duckduckgo"
+              placeholder="(optional) start URL — else web search"
               aria-label="start URL"
             />
             <button onClick={runBrowser} className="btn w-full justify-center">

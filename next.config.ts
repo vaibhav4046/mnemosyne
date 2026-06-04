@@ -29,6 +29,14 @@ const nextConfig: NextConfig = {
       "**/*.log",
       "**/test-export.*",
       "**/home.html",
+      // Never trace build artifacts into the standalone payload — a release zip
+      // sitting in the repo root was getting swept in, doubling the package.
+      "**/*.zip",
+      "**/*.tsbuildinfo",
+      "**/OwnWiki-*.exe",
+    ],
+    "/api/export/[slug]": [
+      "**/*.zip",
     ],
   },
   async headers() {

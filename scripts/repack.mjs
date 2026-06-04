@@ -43,8 +43,13 @@ cp(path.join(ROOT, "electron"), path.join(APP, "electron"));
 fs.copyFileSync(path.join(ROOT, "package.json"), path.join(APP, "package.json"));
 
 // strip dev bloat that output-tracing may have pulled in
-for (const junk of ["dist-electron", ".git", "_inspiration", "docs", "scripts", "dev.log", "build.log", "_b.txt", "home.html"]) {
+for (const junk of ["dist-electron", ".git", "_inspiration", "docs", "scripts", "dev.log", "build.log", "_b.txt", "home.html", "src", "tsconfig.tsbuildinfo", "package-lock.json", "README.md"]) {
   fs.rmSync(path.join(DST, junk), { recursive: true, force: true });
+}
+// strip ANY release artifact accidentally traced into the payload (a repo-root
+// .zip was getting swept in by output tracing, doubling the package size).
+for (const f of fs.readdirSync(DST)) {
+  if (/\.(zip|exe|7z|tar|gz)$/i.test(f)) fs.rmSync(path.join(DST, f), { force: true });
 }
 
 // Integrity check: every CSS/JS the built HTML references must exist in static.

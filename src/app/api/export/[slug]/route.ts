@@ -59,7 +59,7 @@ function bodyToCsv(slug: string, title: string, body: string) {
     ...sections.map((s, i) => [`section_${i + 1}_heading`, s.heading]),
     ...sections.map((s, i) => [`section_${i + 1}_chars`, String(s.chars)]),
   ];
-  return rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(",")).join("\n");
+  return rows.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
 }
 
 async function buildDocx(body: string, title: string) {
@@ -108,7 +108,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ slug: strin
     for (const p of pages) {
       rows.push([p.slug, p.title, p.tags.join("|"), p.links.join("|"), p.sources.join("|"), String(p.body.length), p.updated]);
     }
-    const csv = rows.map((r) => r.map((c) => `"${(c || "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = rows.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
     return new Response(csv, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",

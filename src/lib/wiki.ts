@@ -72,15 +72,20 @@ export function parsePage(raw: string, slug: string): WikiPage {
   const linkRegex = /\[\[([^\]]+)\]\]/g;
   const links = new Set<string>();
   for (const m of body.matchAll(linkRegex)) links.add(slugify(m[1]));
+  // YAML coerces unquoted timestamps to Date and numbers to number — normalise
+  // everything to strings so downstream (CSV export, UI, search) never sees a
+  // non-string where it expects one.
+  const asStr = (v: unknown): string => (v instanceof Date ? v.toISOString() : String(v));
+  const toStrArr = (v: unknown): string[] => (Array.isArray(v) ? v.map(asStr) : v === undefined || v === null || v === "" ? [] : [asStr(v)]);
   return {
     slug,
-    title: (data.title as string) || slug,
-    tags: (data.tags as string[]) || [],
-    sources: (data.sources as string[]) || [],
+    title: data.title !== undefined && data.title !== null ? asStr(data.title) : slug,
+    tags: toStrArr(data.tags),
+    sources: toStrArr(data.sources),
     links: [...links],
     body,
     raw,
-    updated: (data.updated as string) || "",
+    updated: data.updated !== undefined && data.updated !== null && data.updated !== "" ? asStr(data.updated) : "",
   };
 }
 

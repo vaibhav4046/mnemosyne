@@ -1,4 +1,4 @@
-export type AgentKind = "ingest" | "query" | "lint" | "browser" | "file" | "mcp" | "enrich" | "synthesize";
+export type AgentKind = "ingest" | "query" | "lint" | "browser" | "file" | "mcp" | "enrich" | "synthesize" | "desktop";
 export type AgentStatus = "queued" | "running" | "done" | "error";
 
 export type AgentLogLine = { t: string; level: "info" | "warn" | "error"; msg: string };

@@ -20,6 +20,7 @@ const TIMEOUT_MS: Record<AgentKind, number> = {
   file: 300_000,
   synthesize: 180_000,
   mcp: 60_000,
+  desktop: 600_000,
 };
 
 export function register(kind: AgentKind, runner: AgentRunner) {

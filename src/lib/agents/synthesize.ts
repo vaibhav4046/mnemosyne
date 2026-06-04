@@ -83,31 +83,46 @@ Use proper markdown — blank lines between paragraphs, bullets where useful, **
   lines.push(`> ${summary}`);
   lines.push("");
 
-  // Clean a model-written heading: drop leading "#"/bullet markers and surrounding
-  // bold so we don't render "## **Heading**" (redundant bold inside an H2).
+  // ALWAYS render each agent's real grounded answer as the body substance. The
+  // small synthesis model often returns thin sections; the grounded agent text is
+  // the high-value content and must never be dropped. The LLM plan is used only
+  // for the summary, key insights, and any extra cross-reference section on top.
   const cleanHeading = (h: string) =>
     h.trim().replace(/^#+\s*/, "").replace(/^([-*•‣]|\d+[.)])\s+/, "").replace(/^\*\*(.+?)\*\*$/, "$1").trim();
-  if (sections.length) {
+  let renderedAny = false;
+  for (const f of findings) {
+    const r = f.result as { answer?: string; sources?: { n: number; title: string; url: string }[]; query?: string } | undefined;
+    const answer = typeof r?.answer === "string" ? r.answer.trim() : "";
+    if (!answer) continue;
+    lines.push(`## ${cleanHeading(r?.query || f.title)}`);
+    lines.push("");
+    lines.push(answer);
+    if (Array.isArray(r?.sources) && r!.sources.length) {
+      lines.push("");
+      lines.push("**Sources:** " + r!.sources.map((s) => `[${s.n}] ${s.url}`).join(" · "));
+    }
+    lines.push("");
+    renderedAny = true;
+  }
+  // If no agent produced a grounded answer (e.g. non-browser findings), fall back
+  // to the LLM-written sections so the page is never empty.
+  if (!renderedAny && sections.length) {
     for (const s of sections) {
-      const heading = typeof s.heading === "string" && s.heading.trim() ? cleanHeading(s.heading) : "Findings";
-      lines.push(`## ${heading || "Findings"}`);
+      lines.push(`## ${cleanHeading(s.heading) || "Findings"}`);
       lines.push("");
       lines.push(s.body.trim());
       lines.push("");
     }
-  } else {
-    // Fallback: render each agent's grounded answer directly so we never lose data.
-    for (const f of findings) {
-      const r = f.result as { answer?: string; sources?: { n: number; title: string; url: string }[]; query?: string } | undefined;
-      lines.push(`## ${r?.query || f.title}`);
-      lines.push("");
-      lines.push(typeof r?.answer === "string" && r.answer.trim() ? r.answer.trim() : "_(no answer)_");
-      if (Array.isArray(r?.sources) && r!.sources.length) {
-        lines.push("");
-        lines.push("**Sources:** " + r!.sources.map((s) => `[${s.n}] ${s.url}`).join(" · "));
-      }
-      lines.push("");
-    }
+  }
+
+  // Cross-references section from the LLM plan (if it produced one) — adds synthesis
+  // value (links between concepts) without overwriting the grounded substance.
+  const crossRef = sections.find((s) => /cross|relat|connect|see also/i.test(s.heading || ""));
+  if (renderedAny && crossRef && crossRef.body.trim()) {
+    lines.push("## Cross-references");
+    lines.push("");
+    lines.push(crossRef.body.trim());
+    lines.push("");
   }
 
   if (insights.length) {

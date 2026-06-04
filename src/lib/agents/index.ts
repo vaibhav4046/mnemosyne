@@ -6,6 +6,7 @@ import { fileScanRunner } from "./file";
 import { queryRunner } from "./query";
 import { enrichRunner } from "./enrich";
 import { synthesizeRunner } from "./synthesize";
+import { desktopRunner } from "./desktop";
 
 let bootstrapped = false;
 export function bootstrapAgents() {
@@ -17,5 +18,6 @@ export function bootstrapAgents() {
   register("query", queryRunner);
   register("enrich", enrichRunner);
   register("synthesize", synthesizeRunner);
+  register("desktop", desktopRunner);
   bootstrapped = true;
 }

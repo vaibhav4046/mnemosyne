@@ -160,19 +160,41 @@ export async function resolveUnderRoots(absPath: string): Promise<string> {
 const TEXT_EXT = new Set([".md", ".txt", ".json", ".js", ".ts", ".tsx", ".jsx", ".html", ".css", ".py", ".log", ".csv", ".yaml", ".yml", ".toml"]);
 const MAX_EXTRACT_BYTES = 25 * 1024 * 1024;
 
+/**
+ * Extract text from a PDF using pdfjs-dist's legacy build, which runs in Node
+ * without a DOM. (pdf-parse pulls in a pdfjs that references DOMMatrix and throws
+ * "DOMMatrix is not defined" in the packaged server — it broke every PDF.)
+ */
+async function extractPdf(absPath: string): Promise<string> {
+  const { ensureDomPolyfill } = await import("./dom-polyfill");
+  ensureDomPolyfill(); // MUST run before pdfjs loads (it references DOMMatrix at import)
+  const { pathToFileURL } = await import("node:url");
+  const { createRequire } = await import("node:module");
+  const require = createRequire(import.meta.url);
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  try {
+    pdfjs.GlobalWorkerOptions.workerSrc = pathToFileURL(require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs")).href;
+  } catch {/* fall back to in-process fake worker */}
+  const data = new Uint8Array(await fs.readFile(absPath));
+  const doc = await pdfjs.getDocument({ data, isEvalSupported: false, useSystemFonts: true }).promise;
+  let text = "";
+  const pages = Math.min(doc.numPages, 100);
+  for (let i = 1; i <= pages; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map((it: unknown) => (it && typeof it === "object" && "str" in it ? (it as { str: string }).str : "")).join(" ") + "\n";
+    if (text.length > 3_000_000) break;
+  }
+  try { await doc.cleanup(); } catch {}
+  return text;
+}
+
 export async function extractText(absPath: string): Promise<string> {
   const st = await fs.stat(absPath);
   if (st.size > MAX_EXTRACT_BYTES) throw new Error(`file too large (${(st.size / 1024 / 1024).toFixed(1)} MB > 25 MB)`);
   const ext = path.extname(absPath).toLowerCase();
   if (ext === ".pdf") {
-    const mod = (await import("pdf-parse")) as unknown as {
-      default?: (b: Buffer) => Promise<{ text: string }>;
-      pdf?: (b: Buffer) => Promise<{ text: string }>;
-    };
-    const pdfParse = mod.default || mod.pdf || (mod as unknown as (b: Buffer) => Promise<{ text: string }>);
-    const buf = await fs.readFile(absPath);
-    const out = await (pdfParse as (b: Buffer) => Promise<{ text: string }>)(buf);
-    return out.text;
+    return extractPdf(absPath);
   }
   if (ext === ".docx") {
     const mammoth = await import("mammoth");

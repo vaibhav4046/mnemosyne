@@ -25,6 +25,25 @@ export function Shell() {
   const setView = useStore((s) => s.setView);
   const setPaletteOpen = useStore((s) => s.setPaletteOpen);
   const setSidebarOpen = useStore((s) => s.setSidebarOpen);
+  const toast = useStore((s) => s.toast);
+
+  // Auto-index the user's Desktop/Documents/Downloads in the background so chat
+  // can answer about local files with no manual ingest. Throttled to once / 8h
+  // (the scan itself is idempotent — unchanged files are skipped instantly).
+  useEffect(() => {
+    const KEY = "ownwiki:lastDesktopScan";
+    const last = Number(localStorage.getItem(KEY) || 0);
+    if (Date.now() - last < 8 * 3600_000) return;
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch("/api/desktop-scan", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+        if (!r.ok) return;
+        localStorage.setItem(KEY, String(Date.now()));
+        toast({ kind: "info", msg: "Indexing your Desktop, Documents & Downloads…", ttl: 4000 });
+      } catch {}
+    }, 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

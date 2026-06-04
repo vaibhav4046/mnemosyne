@@ -35,6 +35,8 @@ export function Shell() {
     const last = Number(localStorage.getItem(KEY) || 0);
     if (Date.now() - last < 8 * 3600_000) return;
     const t = setTimeout(async () => {
+      // Embed the vault's own pages so chat RAG can answer from curated knowledge.
+      fetch("/api/reindex-pages", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).catch(() => {});
       try {
         const r = await fetch("/api/desktop-scan", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
         if (!r.ok) return;

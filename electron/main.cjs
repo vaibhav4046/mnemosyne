@@ -67,9 +67,12 @@ function waitForServer(url, timeoutMs = 45000) {
     const tick = () => {
       const req = http.get(url, (res) => {
         res.resume();
-        if (res.statusCode === 200) return resolve();
-        if (Date.now() - start > timeoutMs) return reject(new Error(`server returned ${res.statusCode}`));
-        setTimeout(tick, 400);
+        // ANY HTTP response means the server is listening and serving pages.
+        // A non-200 here (e.g. health 503 because Ollama is down) is a degraded
+        // subsystem, NOT a server-readiness failure — the app is fully usable
+        // via cloud providers, so load the window regardless. Gating on 200
+        // would wedge the whole app shut whenever Ollama isn't running.
+        return resolve();
       });
       req.on("error", () => {
         if (Date.now() - start > timeoutMs) return reject(new Error("server timeout"));

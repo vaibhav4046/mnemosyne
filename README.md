@@ -1,289 +1,244 @@
 <div align="center">
-  <img src="public/logo.svg" width="80" alt="Own Wiki logo" />
-  <h1>Own Wiki</h1>
-  <p><strong>A local-first self-improving AI memory wiki — your own Wikipedia, curated by a local LLM, packaged as a Windows .exe.</strong></p>
-  <p>
-    <img alt="next" src="https://img.shields.io/badge/Next.js-15-black?logo=nextdotjs" />
-    <img alt="react" src="https://img.shields.io/badge/React-19-149eca?logo=react" />
-    <img alt="electron" src="https://img.shields.io/badge/Electron-42-47848f?logo=electron" />
-    <img alt="ollama" src="https://img.shields.io/badge/Ollama-local-8b5cf6" />
-    <img alt="qa" src="https://img.shields.io/badge/QA-27%2F27%20pass-22d3a8" />
-    <img alt="build" src="https://img.shields.io/badge/build-passing-22d3a8" />
-  </p>
+
+<img src="./public/logo.svg" width="92" alt="Own Wiki logo" />
+
+# Own Wiki
+
+### Your second brain — a local-first, AI-powered personal knowledge OS.
+
+**Chat with your notes and files. Watch your knowledge organize itself into a living galaxy. All on your machine. No cloud required.**
+
+[![Release](https://img.shields.io/github/v/release/vaibhav4046/mnemosyne?style=for-the-badge&color=8b5cf6)](https://github.com/vaibhav4046/mnemosyne/releases/latest)
+[![Platform](https://img.shields.io/badge/Windows-portable_.exe-0ea5e9?style=for-the-badge)](https://github.com/vaibhav4046/mnemosyne/releases/latest)
+[![Local first](https://img.shields.io/badge/100%25-local_first-22c55e?style=for-the-badge)](#-privacy--security)
+[![Built with](https://img.shields.io/badge/Electron_+_Next.js_+_Ollama-1e293b?style=for-the-badge)](#-tech-stack--why)
+
+<br/>
+
+<img src="./docs/screenshots/02-chat-answer.png" width="860" alt="Own Wiki — chat with your vault" />
+
 </div>
 
 ---
 
-Mnemosyne is a web application (not a static site) that runs a small Operating-System-like environment for your knowledge. The LLM is the librarian: it ingests sources, writes and maintains an interlinked Markdown wiki, retrieves cited context for chat, and runs background agents in parallel — all on your own machine via [Ollama](https://ollama.com).
+## What is this?
 
-Inspired by Andrej Karpathy's "LLM Wiki" pattern and the recall surfaces of [Qyntra](https://qyntra-app.vercel.app/), Mnemosyne combines a plain-Markdown vault, a vector-RAG layer, a 3D galaxy graph, and a multi-agent swarm into a single dark, sleek workspace.
+**Own Wiki** is a desktop app that turns everything you know — your notes, your documents, your conversations — into a private, searchable, self-organizing knowledge base, powered by a **local LLM**.
 
----
+It's inspired by Andrej Karpathy's *"LLM wiki"* idea and tools like Notion AI / Qyntra — but it runs **entirely on your computer**. Your data never leaves the machine. No subscription, no API key required, no telemetry.
 
-## Screenshots
+Ask it a question and it answers from *your* knowledge, with citations. Drop in a PDF and it reads it. Give a research topic to the **agent swarm** and it investigates in parallel and writes you a cited brief. And the whole web of what you know renders as an interactive 3D **galaxy** you can fly through.
 
-Editorial dark theme — Cormorant Garamond display serif, Inter Tight body, JetBrains Mono labels. Violet primary (matches the logo), warm-cream foreground, hairline 0.5 px borders, star-grid sidebar, glass cards, mono breadcrumb topbar with a ⌘K search trigger.
-
-| Chat — streaming RAG, inline cite chips + boxed cite-tray | Wiki — 3-col reader, [[wikilinks]], pinned pages |
-| --- | --- |
-| ![chat](docs/screenshots/01-chat.png) | ![wiki](docs/screenshots/02-wiki.png) |
-
-| Galaxy — 3D force graph of all [[links]] | Files — sandboxed root chips + one-click ingest |
-| --- | --- |
-| ![graph](docs/screenshots/03-graph.png) | ![files](docs/screenshots/04-files.png) |
-
-| Agents — swarm + multi-step browser + maintenance | MCP servers — stdio plug-ins |
-| --- | --- |
-| ![agents](docs/screenshots/05-agents.png) | ![mcp](docs/screenshots/06-mcp.png) |
-
-| Settings — Health · Self-improving loop · stack | Command palette (⌘K) |
-| --- | --- |
-| ![settings](docs/screenshots/07-settings.png) | ![palette](docs/screenshots/08-palette.png) |
+> **TL;DR** — It's a ChatGPT-for-your-own-stuff that you actually own.
 
 ---
 
-## Features
+## ✨ Highlights
 
-- **Self-improving loop** — toggle on; a server-side daemon ticks every 90s and either enriches the sparsest wiki page or runs a lint pass, growing the memory unattended.
-- **Multi-step browser agent (Claude-Cowork-style)** — give it a natural-language task and a start URL; an LLM planner loop iterates `navigate / click / fill / scroll / extract` up to 15 steps until it returns a thorough answer with citations.
-- **Swarm intelligence with synthesis** — `launch swarm` fans out 3 parallel browser agents on different angles of a topic + a lint pass; when all complete, a `synthesize` agent fuses the findings into a single wiki page with cross-references back to every contributing agent.
-- **Streaming RAG chat** — every answer is grounded in cosine-retrieved context from your local vector store; citations rendered inline as chips; `[[wiki-slug]]` rendered as clickable pills.
-- **Wiki as code** — `vault/pages/*.md` files with YAML front-matter. Pages are dense (3-5 sections, ## See also, ## Sources), properly spaced, and richly cross-linked. Open in any editor.
-- **LLM curator** — ingest spawns an agent that produces 4-8 detailed pages with structured sections, then reuses existing slugs as cross-references.
-- **3D Galaxy** — every `[[link]]` becomes an edge in a `react-force-graph-3d` scene; nodes colour-coded by tag, click jumps to the page.
-- **Sandboxed desktop ingest** — path-jailed FS layer exposes Desktop / Documents / Downloads / vault as roots; one click sends a file through `pdf-parse` / `mammoth` and into the wiki.
-- **MCP client** — connect any stdio MCP server (filesystem, fetch, custom) and expose its tools to the agents.
-- **Local-first by default** — Ollama at `127.0.0.1:11434`; no keys, no telemetry, no cloud.
-- **Windows .exe** — packaged via Electron + electron-builder. The .exe boots the Next.js standalone server on `127.0.0.1:3789` and opens a native window.
-
----
-
-## Architecture
-
-```
-+--------------------+        +--------------------+
-|   Next.js shell    | <----- |     Zustand        |
-|  (App Router, RSC) |        |  view + chat store |
-+----------+---------+        +--------------------+
-           |
-           |  fetch/SSE
-           v
-+--------------------+        +-----------------------------+
-|     API routes     | -----> |  Agent registry (p-queue)   |
-|   /api/chat (SSE)  |        |  ingest · lint · query ·    |
-|   /api/ingest      |        |  browser · file · MCP       |
-|   /api/wiki[/slug] |        +--------------+--------------+
-|   /api/agents/...  |                       |
-|   /api/files       |          +------------+-------------+
-|   /api/mcp         |          |                          |
-|   /api/models      |          v                          v
-+--------------------+     +---------+              +-------------+
-                           |  Wiki   |              |   Vector    |
-                           | vault/  |              |  store      |
-                           |   *.md  |              | JSON+cosine |
-                           +---------+              +-------------+
-                                |                          ^
-                                |                          |
-                                v                          |
-                           +----------+              +-----------+
-                           |  Ollama  |  embed/chat  |  chunker  |
-                           |  HTTP    |<-------------+           |
-                           +----------+              +-----------+
-                                ^
-                                |
-                          +-----+------+
-                          | Playwright |
-                          | (chromium) |
-                          +------------+
-```
+| | |
+|---|---|
+| 🧠 **RAG chat over your vault** | Streaming answers grounded in your notes + files, with inline `[n]` citations. |
+| 🌌 **Knowledge galaxy** | A 3D force-graph of every note and how they connect — hover to highlight, click to fly in. |
+| 🤖 **Agent swarm** | Spawn parallel research agents that search the web, ground their findings, and synthesize a cited wiki page. |
+| 🗂️ **Desktop auto-index** | Reads your Desktop / Documents / Downloads automatically — ask about a file with zero manual import. |
+| 💾 **Long-term memory** | Extracts atomic facts after each chat, so it remembers you across conversations. |
+| ⚡ **int8 vector store** | Custom quantized embeddings — ~4× smaller on disk, <1% cosine error, zero native deps. |
+| 🔌 **Multi-provider** | Ollama by default; optional fallback to Groq / Gemini / OpenRouter with a pasted key. |
+| 🎨 **Premium UI** | Light + dark themes, animated background, resizable panes, command palette (`⌘K`). |
 
 ---
 
-## Tech stack & why
+## 📸 Screenshots
 
-| Layer | Choice | Reason |
-| --- | --- | --- |
-| Framework | **Next.js 15 (App Router, Turbopack)** | One process serves UI + server actions + SSE. Server components keep the bundle small while still letting us call `node:fs` and `playwright` server-side. |
-| UI | **React 19 + Tailwind 4** | Streaming-friendly, lets us drive token-level updates without ceremony. Tailwind 4 gives us CSS variables for the dark theme with no class bloat. |
-| State | **Zustand** | Minimal store, no provider boilerplate, plays nicely with selector subscriptions for live agent updates. |
-| Icons | **lucide-react** | Crisp single-file SVG icons that match the dark aesthetic. |
-| Markdown | **react-markdown + remark-gfm + gray-matter** | Standard pipeline; gray-matter parses YAML front-matter so the wiki layer can read/write the same files an editor would. |
-| 3D viz | **react-force-graph-3d + three.js** | The "galaxy" view of the wiki — Qyntra's signature recall surface — rendered with WebGL for thousands of nodes at 60fps. |
-| LLM | **Ollama (`llama3.2:3b` chat, `nomic-embed-text` embed)** | Free, local, fast on a laptop; no API keys; streaming over loopback is sub-100ms TTFT. |
-| Vector store | **JSON file + cosine similarity (in-memory cache)** | Zero native deps (no `better-sqlite3` build pain on Windows), portable across machines. Adequate for tens of thousands of chunks; swap for sqlite-vec or LanceDB later. |
-| Concurrency | **p-queue** | Tiny, dependable parallel queue with a single concurrency knob — perfect for an agent swarm. |
-| Browser agent | **Playwright (headless chromium)** | Mature DOM access + screenshots; the agent loads a URL, summarises the main content with the local LLM, and returns the screenshot inline. |
-| File parsers | **pdf-parse, mammoth** | PDF and `.docx` ingestion; plain-text fallback for everything else. |
-| Tool protocol | **`@modelcontextprotocol/sdk`** | Standard stdio MCP client — drop in `@modelcontextprotocol/server-filesystem`, `server-fetch`, or anything custom. |
+<table>
+  <tr>
+    <td width="50%"><img src="./docs/screenshots/01-chat-hero.png" alt="Ask your vault" /><br/><sub><b>Ask your vault</b> — clean, fast chat home.</sub></td>
+    <td width="50%"><img src="./docs/screenshots/03-galaxy.png" alt="Knowledge galaxy" /><br/><sub><b>Galaxy</b> — your knowledge as a living graph.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="./docs/screenshots/04-wiki.png" alt="Wiki reader" /><br/><sub><b>Wiki</b> — auto-curated pages with backlinks.</sub></td>
+    <td width="50%"><img src="./docs/screenshots/05-agents.png" alt="Agent swarm" /><br/><sub><b>Agents</b> — parallel swarm research, live.</sub></td>
+  </tr>
+</table>
 
 ---
 
-## Vault schema
+## 🏗️ Architecture
 
-```
-vault/
-├── CLAUDE.md          ← schema + conventions for the LLM curator
-├── index.md           ← auto-rebuilt catalog of pages
-├── log.md             ← append-only ledger of ingests/queries/lints
-└── pages/
-    ├── mnemosyne.md
-    ├── ollama.md
-    ├── karpathy-llm-wiki.md
-    └── ...            ← one page per atomic concept
+Own Wiki is one Electron app that boots a Next.js server on `127.0.0.1` and talks to a local Ollama runtime. Everything — vault, vectors, memory — lives in a per-user folder under `%APPDATA%`.
+
+```mermaid
+flowchart TB
+    subgraph Desktop["🖥️  Electron Desktop App"]
+        UI["React UI<br/>Chat · Galaxy · Wiki · Files · Agents"]
+        MAIN["Electron main<br/>single-instance · free-port · per-user data"]
+    end
+
+    subgraph Server["⚙️  Next.js server (127.0.0.1:3789)"]
+        API["API routes<br/>/chat /swarm /ingest /desktop-scan ..."]
+        AGENTS["Agent registry<br/>browser · ingest · synthesize · desktop"]
+        RAG["RAG engine"]
+    end
+
+    subgraph Data["🗄️  Per-user data (%APPDATA%/Own Wiki)"]
+        VEC["Vector store<br/>int8 quantized"]
+        VAULT["Markdown vault<br/>pages + memory + log"]
+    end
+
+    subgraph AI["🧠  Local AI"]
+        OLLAMA["Ollama<br/>llama3.2:3b + nomic-embed-text"]
+    end
+
+    CLOUD["☁️ Optional fallback<br/>Groq · Gemini · OpenRouter"]
+    WEB["🌐 Web<br/>DuckDuckGo · Wikipedia"]
+    FS["📁 Desktop / Documents / Downloads"]
+
+    MAIN --> Server
+    UI <--> API
+    API --> AGENTS
+    API --> RAG
+    RAG --> VEC
+    RAG --> OLLAMA
+    AGENTS --> OLLAMA
+    AGENTS --> WEB
+    AGENTS --> VAULT
+    API -.fallback.-> CLOUD
+    VEC <--> VAULT
+    AGENTS --> FS --> VEC
 ```
 
-Each page has YAML front-matter:
+### How a chat answer is built (RAG)
 
-```yaml
----
-title: Display title
-tags: [list, of, tags]
-sources: [source-id-1, source-id-2]
-updated: 2026-05-27T00:00:00.000Z
----
+```mermaid
+sequenceDiagram
+    participant U as You
+    participant C as /api/chat
+    participant V as Vector store
+    participant O as Ollama
+    U->>C: question
+    C->>V: embed query, cosine search (top-10)
+    V-->>C: relevant chunks (notes, files, pages)
+    C->>C: + recent memory + conversation synopsis + app facts
+    C->>O: grounded prompt (streamed)
+    O-->>U: cited answer, token by token
 ```
 
-Cross-references use `[[slug]]` and become edges in the galaxy.
+### How the swarm works
+
+```mermaid
+flowchart LR
+    T["Topic"] --> A1["Agent: overview"]
+    T --> A2["Agent: techniques"]
+    T --> A3["Agent: applications"]
+    A1 --> S["Synthesizer"]
+    A2 --> S
+    A3 --> S
+    S --> P["Cited wiki page<br/>+ galaxy node"]
+```
+
+Each browser agent runs deterministic **search → fetch → grounded-summarise** (SSRF-guarded), so even a small local model produces accurate, cited output. The synthesizer always renders each agent's grounded answer, then layers on cross-references and key insights.
 
 ---
 
-## Running it
+## 🧰 Tech stack & why
 
-### Prerequisites
+| Layer | Choice | Why |
+|---|---|---|
+| Shell | **Electron** | One installable `.exe`; native filesystem access for desktop indexing. |
+| Front + back | **Next.js 16 (App Router) + React 19** | One framework for UI **and** API routes; ships as a standalone server. |
+| Inference | **Ollama** (`llama3.2:3b`) | Free, local, private. No key, no cloud, works offline. |
+| Embeddings | **nomic-embed-text** (768-dim) | Strong local embeddings for RAG. |
+| Vector store | **Custom, int8 quantized** | ~4× smaller on disk, <1% cosine error, pure-JS (no native deps to break the portable build). |
+| Graph | **react-force-graph-3d + three.js** | GPU-accelerated 3D galaxy with bloom. |
+| State | **Zustand** | Tiny, fast, persisted. |
+| Fallback AI | **Groq / Gemini / OpenRouter** | Optional one-paste upgrade to bigger models. |
 
-- Node 20+
-- [Ollama](https://ollama.com) running locally
-- Models pulled:
-  ```bash
-  ollama pull llama3.2:3b
-  ollama pull nomic-embed-text
-  ```
+---
 
-### Run as a web app
+## 🚀 Quick start
+
+### Option A — just run it (Windows)
+
+1. Download **`OwnWiki-1.0.0-portable.zip`** from the [latest release](https://github.com/vaibhav4046/mnemosyne/releases/latest).
+2. Unzip anywhere and double-click **`Own Wiki.exe`**.
+3. (Recommended) Install [Ollama](https://ollama.com) and pull the models for full local power:
+   ```bash
+   ollama pull llama3.2:3b
+   ollama pull nomic-embed-text
+   ```
+   > No Ollama? The app still opens — add a free **Groq/Gemini** key in **Settings** and it works via the cloud fallback.
+
+### Option B — run from source
 
 ```bash
+git clone https://github.com/vaibhav4046/mnemosyne.git
+cd mnemosyne
 npm install
-npx playwright install chromium     # for the browser agent
-npm run dev                          # http://localhost:3500
-```
+npm run dev          # http://localhost:3000
 
-### Download the Windows .exe
-
-Grab the latest portable build from **[Releases](https://github.com/vaibhav4046/mnemosyne/releases/latest)** (~577 MB zip). Unzip, double-click `Own Wiki.exe`, done. Electron boots the Next.js standalone server on `127.0.0.1:3789` and opens a native window.
-
-### Build the .exe yourself
-
-```bash
-npm install
-npx playwright install chromium
-npm run build:exe          # produces dist-electron/win-unpacked/Own Wiki.exe
-```
-
-(Windows Developer Mode required for electron-builder to extract code-signing symlinks — or just ship the `win-unpacked/` folder as-is.)
-
-Open `http://localhost:3500`. The status bar should read **ollama live · llama3.2:3b · nomic-embed-text**.
-
-### Try it
-
-1. **Files** → pick a PDF from Desktop → click `ingest`. An ingest agent embeds, summarises, and writes wiki pages.
-2. **Chat** → ask a question about the document. Citations appear as chips.
-3. **Wiki** → see the new pages. `[[wikilinks]]` are clickable.
-4. **Graph** → watch the page appear in the 3D galaxy.
-5. **Agents** → hit `launch swarm` to fan out three parallel jobs (lint + two browser scans).
-6. **MCP** → add a stdio MCP server and expose its tools.
-
-### Environment
-
-```bash
-OLLAMA_HOST=http://127.0.0.1:11434
-OLLAMA_CHAT_MODEL=llama3.2:3b
-OLLAMA_EMBED_MODEL=nomic-embed-text
-MNEMOSYNE_VAULT=./vault
+# build the desktop app
+npm run build:exe    # -> dist-electron/
 ```
 
 ---
 
-## Project layout
+## 📖 How to use
+
+**💬 Chat** — Ask anything about your notes and files. Toggle **RAG** (retrieve from your vault) and **Memory** (remember facts) per thread. Drop or paste a PDF/DOCX/image right into the composer to discuss it. Every thread is saved in the sidebar; export any thread to `.md` / `.json`.
+
+**🌌 Galaxy** — Your whole vault as a 3D graph. **Hover** a node to light up its neighbours, **click** to fly in and focus, **double-click** to open the page. Filter by tag, search nodes, toggle glow / labels / auto-rotate.
+
+**📚 Wiki** — Browse the auto-curated pages the AI writes from your sources. Backlinks, table of contents, reading time. Create or edit pages by hand too. Export to MD / PDF / CSV / DOCX.
+
+**🗂️ Files** — Browse your Desktop / Documents / Downloads in-app. They're **auto-indexed** on launch, so chat can already answer about them — no manual import. Click any file to preview, or ingest a whole folder.
+
+**🤖 Agents** — Type a topic and launch a **swarm**: parallel agents research different angles, then synthesize one cited wiki page that drops straight into your galaxy. Watch each agent's progress live.
+
+**🔌 MCP & Settings** — Connect MCP tool servers (command-allowlisted). In Settings, pick your provider/model, paste optional cloud keys (masked, stored locally), switch theme.
+
+> **Shortcuts:** `⌘/Ctrl + K` command palette · `⌘/Ctrl + 1–7` jump between views.
+
+---
+
+## 🔐 Privacy & security
+
+- **Local-first.** Vault, vectors, and memory live only in `%APPDATA%/Own Wiki`. Nothing is uploaded unless *you* enable a cloud provider.
+- **Per-user data.** Whoever installs it sees only their own profile.
+- **Hardened APIs.** SSRF guard on all outbound fetches, CSRF middleware, MCP command allowlist, path-traversal + realpath checks on file access, strict CSP.
+- **Keys stay secret.** Cloud keys are masked in the UI, stored locally, never logged or sent to the browser.
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] Real-time file-watching for instant re-index
+- [ ] 2D/3D galaxy toggle + timeline view
+- [ ] Per-vault encryption at rest
+- [ ] macOS + Linux builds
+
+---
+
+## 📂 Project structure
 
 ```
 src/
-├── app/
-│   ├── api/
-│   │   ├── chat/route.ts             SSE-streamed RAG chat
-│   │   ├── ingest/route.ts           queues an ingest agent
-│   │   ├── wiki/route.ts             list + graph
-│   │   ├── wiki/[slug]/route.ts      GET / PUT / DELETE a page
-│   │   ├── agents/route.ts           spawn + list jobs
-│   │   ├── agents/stream/route.ts    SSE feed of agent updates
-│   │   ├── files/route.ts            sandboxed FS browser
-│   │   ├── mcp/route.ts              MCP server CRUD + connect
-│   │   └── models/route.ts           Ollama + vector store status
-│   ├── layout.tsx · globals.css      dark theme + animations
-│   └── page.tsx                      mounts <Shell />
-├── components/                       shell, sidebar, panels, status-bar
-├── lib/
-│   ├── ollama.ts                     chat / embed / generateJSON
-│   ├── vector.ts                     JSON-backed cosine store
-│   ├── wiki.ts                       parse / write / link Markdown pages
-│   ├── fs.ts                         sandboxed FS + PDF/docx extractors
-│   ├── agents/
-│   │   ├── registry.ts               in-process p-queue + SSE pub/sub
-│   │   ├── ingest.ts · lint.ts · browser.ts · file.ts · query.ts
-│   │   └── types.ts · index.ts
-│   └── mcp/client.ts                 stdio MCP client wrapper
-└── store/index.ts                    Zustand
+  app/api/        chat · swarm · ingest · desktop-scan · reindex-pages · wiki · files · providers ...
+  lib/
+    vector.ts     int8 quantized vector store
+    wiki.ts       markdown vault engine
+    providers.ts  multi-provider LLM layer
+    agents/       browser · ingest · synthesize · desktop · registry
+  components/     chat · graph (galaxy) · wiki · files · agents panels
+electron/         main.cjs (desktop shell)
+scripts/          brutal-qa · provider-qa · ui-walk · repack
 ```
 
 ---
 
-## Production hardening
+<div align="center">
 
-Mnemosyne has been brutally QA'd against 27 user-archetype scenarios — **all passing**:
+Built by **[Vaibhav Lalwani](https://github.com/vaibhav4046)** · Powered by local AI · Made to be owned.
 
-- API: path-traversal, invalid slugs, invalid roots, `..` injection, unknown agent kinds, missing required fields → all return `400` with structured error envelopes.
-- Chat: streaming with `AbortController` + stop button, XSS payloads inert (rendered as text), regenerate + copy, persisted to `localStorage`.
-- UI: all 7 panels render under load, mobile menu collapses < 768 px, command palette opens via Ctrl/⌘+K *and* sidebar button.
-- Errors: React `ErrorBoundary` per panel catches runtime crashes with retry/reload; `EventSource` for agent updates auto-reconnects.
-- Vault: `[slug]` strictly validated (`/^[a-z0-9][a-z0-9-]{0,79}$/`); no markdown file is written outside `vault/pages/`.
-- Build: `npm run build` passes — 12 API routes registered, home page prerendered.
+<sub>If this is useful, a ⭐ goes a long way.</sub>
 
-Run the test suite:
-
-```bash
-node scripts/brutal-qa.mjs
-# === 27 pass / 0 fail / 27 total ===
-```
-
-## Agents
-
-| Kind | Purpose | Output |
-| --- | --- | --- |
-| `ingest` | Embed + curate a source into 4-8 dense wiki pages. | wiki pages + vectors |
-| `enrich` | Expand the sparsest page using related context + add cross-links. | rewritten page |
-| `lint` | Sweep for contradictions, stale claims, orphans, suggest links. | structured report |
-| `browser` | Multi-step browser loop: navigate / click / fill / scroll / extract / done. | answer + screenshot + trace |
-| `query` | One-shot RAG answer. | answer + citations |
-| `file` | Scan a sandboxed dir and ingest matching files. | per-file ingest results |
-| `synthesize` | Read N completed jobs and fuse them into one wiki page. | new wiki page |
-
-## Roadmap
-
-- swap JSON vector store for `sqlite-vec` once Windows build pipeline is sorted
-- `chokidar` watcher on `vault/` for live reloading the graph
-- WebRTC-based pair sessions for shared wikis
-- inline RAG sources panel on every page
-- per-agent permission scopes for the MCP layer
-- tool-call surfaces for connected MCP servers
-- code-signed `.exe` + auto-updater channel via electron-builder
-
----
-
-## Credits
-
-- [Andrej Karpathy](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) — the LLM Wiki pattern.
-- [Qyntra](https://qyntra-app.vercel.app/) — Collect/Connect/Recall framing and the galaxy view.
-- [Ollama](https://ollama.com) — making local LLMs ergonomic.
-
----
-
-MIT.
+</div>
